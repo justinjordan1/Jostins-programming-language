@@ -20,13 +20,13 @@ ___
 
 ## Syntax and stuff
 
-Statically typed, just in case I wanna build a compiler over the summer or smth
+Statically typed, just in case I want to build a compiler over the summer
 
 ### Variable Declarations
 
 _____
 
-- Initizaliaztion  `Name type = /value/;` or `Name1,Name2... type = /value/;`
+- initialization  `Name type = /value/;` or `Name1,Name2... type = /value/;`
 - Declaration `Name type;`
 - Assignment `Name = /value/;`
 
@@ -45,7 +45,8 @@ ____
 ### Functions
 
 - Declaration `functionName: (p1,p2...etc) returnType {}`
-- lambda Functiosn `Name = a: a x^ 2`
+- lambda Functions ` p1: p1^ 2`
+  (p as an example keyword of a parameter, which are formatted like `type name`)
 - The absence of a return statement will be handled by returning the last line of the function. To return `void`, do
   exactly that
 
@@ -101,14 +102,30 @@ if conditional {
 
 Will try to support arrays &linked lists. Maybe a matrices data structure
 
-- `name int[] = 1,2,3,4;` - declaration
+Declarations /initialization
+
+- `name int[] = 1,2,3,4;`
 - `name int[] size ;`
-- `name[0]` - gets value at index 0
-- `name Ll<> = 1,2,3,4;` - declaration
-- `name<0>` - gets value at index 0
-- `name matrix = 2x2;` - declaration
+
+Getter
+
+- `name[0]`
+
+Declaration
+
+- `name Ll<> = 1,2,3,4;`
+
+Getter
+
+- `name<0>`
+
+*Matrix Syntax*
+Declaration -`name matrix = 2x2;`
+
 - `name matrix = [1,2],[3,4];`
-- `name matrix[0,0;]`- gets value at column 0, row 0
+  Getter
+
+- `name matrix[0,0;]`
 
 ----
 
