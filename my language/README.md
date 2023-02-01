@@ -30,6 +30,16 @@ _____
 - Declaration `Name type;`
 - Assignment `Name = /value/;`
 
+### Types
+
+| Syntax    | Description |
+|-----------|------------|
+| Boolean   | `George`   |
+| Integer   | `int`      |
+| String    | `String`   |
+| Charector | `char`     |
+| Double    | `dos`      |
+
 ____
 
 ### Functions
@@ -55,6 +65,17 @@ ___
 
 - `foreach var|vars {} ` standard for each
 - `for (name=initializedValue conditional)+ {}` for loop
+
+##### Conditionals
+
+standard if, else, elseif
+
+```
+if conditional {
+} elseif conditional {
+} else conditional {
+}
+```
 
 ### Operaters
 
