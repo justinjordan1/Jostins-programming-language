@@ -1,0 +1,79 @@
+
+program ::= statementlist
+statementlist ::= statement+
+statement ::= initialization ";"
+            | conditional ";"
+            | functionDefinition ";"
+            | loop ";"
+            | block
+            | returnStatment ";"
+
+block ::= "{" statement "}"
+
+initialization ::= IDENTIFIER type primary
+
+type ::= "george" //george bool
+        | "interger" //intentionally mispelled because I think its funny in the moment, will probably change ltr
+        | 
+
+expression ::= binaryExpression
+                | unaryExpression
+                | parenthesizedExpression
+
+functionCall ::= IDENTIFIER "(" argumentList?")"
+
+argumentList ::= expression
+
+
+functionDefinition ::= IDENTIFIER ":" "(" argumentList?")" returnType
+
+returnType ::= primary
+
+parenthesizedExpression ::= primary binaryOperater expression
+
+unaryExpression ::= unaryOperator primary
+
+unaryOperator ::= "!" "-"
+
+
+binaryExpression ::= expression binaryOperater expression
+
+binaryOperater ::= simpleMathOperator | comparator | booleanOperator
+
+booleanOperator ::= "&&" | "||"
+
+
+primary ::= NUMBER | STRING | IDENTIFIER | booleanLiteral | functionCall | "-" NUMBER
+
+booleanLiteral ::= TRUE | FALSE
+
+matrixMath ::= expression simpleMathOperator expression
+    | matrix simpleMathOperator expression
+    | matrix simpleMathOperator matrix
+
+matrix ::= expressionList
+        | expression
+
+expressionList ::= expressionList
+               | expression
+
+simpleMathOperator ::= "+" | "-" | "/" | "x^" | "%" |
+
+ifStatement ::= "if" "("expression")" block
+
+ifelseStatment ::= ["else" "("expression")" block]
+
+elseStatment ::= ["else" "("expression")" block]
+
+conditional ::= ifStatement ifelseStatment elseStatment
+
+// loops
+
+forLoop ::= "for" "(" initialization ";" expression ";" assignment ")" block
+
+whileLoop ::= "while "( expression ) block
+
+
+
+
+
