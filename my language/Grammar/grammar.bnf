@@ -8,6 +8,7 @@ statement ::= varActivities ";"
             | block
             | returnStatement ";"
             | "break" ";"
+            | collectionActivities ";"
 
 block ::= "{" statement "}"
 
@@ -15,7 +16,8 @@ varActivities ::= varInitialization | varDeclaration | varAssignment | unaryVarA
 
 varInitialization ::= varIdentifierList type "=" expression
 
-varIdentifierList ::= IDENTIFIER {"," IDENTIFER} //extended bnf syntax
+varIdentifierList ::= IDENTIFIER
+                    | IDENTIFIER "," varIdentifierList
 
 varDeclaration ::= IDENTIFIER type
 
@@ -30,7 +32,7 @@ booleanLiteral ::= TRUE | FALSE
 type ::= "george" //george bool
         | "interger" //intentional misspelling
         | "String"
-        | "Matrix[]"
+        | "Matrix"
         | "char"
         | "dos"
 
@@ -44,6 +46,7 @@ binaryExpression ::= primary binaryOperator primary
                  | parenthesizedExpression binaryOperator parenthesizedExpression
                  | parenthesizedExpression binaryOperator primary
                  | primary binaryOperator parenthesizedExpression
+                 //im sure theres a better way to condense this.
 
 binaryOperator ::=  booleanOperator | comparator | simpleMathOperator
 
@@ -57,7 +60,6 @@ unaryExpression ::= unaryOperator primary
                 | unaryOperator parenthesizedExpression
 
 unaryOperator ::= "!" | "-"
-// functions
 
 functionCall ::= IDENTIFIER "(" callParameters?")"
 
@@ -86,7 +88,7 @@ elseStatement ::= "else" "("expression")" block
 
 // loops
 loop ::= forLoop | whileLoop
-forLoop ::= "for" "(" initialization ";" expression ";" assignment ")" block
+forLoop ::= "for" "(" varInitialization ";" expression ";" varAssignment ")" block
          | "foreach" "("IDENTIFIER | collection")" block
 
 whileLoop ::= "while "( expression ) block
@@ -95,17 +97,42 @@ whileLoop ::= "while "( expression ) block
 
 collection ::= array | linkedList | matrix
 
-collectionActivities ::= collectionInitialization collextionDeclaration collectionAssingment
+expressionList ::= expression
+                | expression "," expressionList
 
-collectionInitialization ::= IDENTIFER "[]" "=" "array"
+collectionActivities ::= collectionInitialization collectionDeclaration collectionAssingment collectionGetters
 
-collextionDeclaration
+collectionInitialization ::= IDENTIFER  type"[]" "=" array
+                          | IDENTIFER type"[]" "=" "[" expressionList "]"
+                          | IDENTIFIER type"<>" "=" "<" expressionList ">"
+                          | IDENTIFER  type"<>" "=" linkedList
+                          | IDENTIFIER type"[[]]"  "=" "[[" expressionList {"," expressionList} "]]"
 
-collectionAssingment ::=
+collectionDeclaration ::= IDENTIFIER type"["NUMBER"]"
+                        | IDENTIFIER type "<>"
+                        | IDENTIFIER type"[[]]" "=" NUMBER"x"NUMBER
+
+collectionAssingment ::= IDENTIFIER "=" array
+                       | IDENTIFIER "=" linkedList
+                       | IDENTIFIER "=" matrix
+                       | IDENTIFIER"["NUMBER"]" "=" expression
+                       | IDENTIFIER"<"NUMBER">" "=" expression
+                       | IDENTIFIER"<"+">" "=" expression //add to the end of a linked list
+                       | IDENTIFIER"<"0+">" "=" expression //adds to the front of a linked list
+                       | IDENTIFIER"[["NUMBER "," NUMBER"]]" "=" expression
+
+collectionGetters ::= IDENTIFIER"["NUMBER"]"
+                    | IDENTIFIER"<"NUMBER">"
+                    | IDENTIFIER"[["NUMBER "," NUMBER"]]"
+
+
+
 
 array ::= "[" expression { "," expression } "]"
 
 linkedList ::= "<" expression { "," expression } ">"
+
+matrix ::= "[[" expressionList {"," expressionList} "]]"
 
 
 
