@@ -1,81 +1,112 @@
 
-program ::= statementlist
-statementlist ::= statement+
-statement ::= initialization ";"
+program ::= statementList
+statementList ::= statement+
+statement ::= varActivities ";"
             | conditional ";"
             | functionDefinition ";"
             | loop ";"
             | block
-            | returnStatment ";"
+            | returnStatement ";"
+            | "break" ";"
 
 block ::= "{" statement "}"
 
-initialization ::= IDENTIFIER type primary
+varActivities ::= varInitialization | varDeclaration | varAssignment | unaryVarAssignment
+
+varInitialization ::= varIdentifierList type "=" expression
+
+varIdentifierList ::= IDENTIFIER {"," IDENTIFER} //extended bnf syntax
+
+varDeclaration ::= IDENTIFIER type
+
+varAssignment ::= IDENTIFER "=" expression
+
+unaryVarAssignment ::= "++" IDENTIFIER | "--" IDENTIFIER
+
+primary ::= NUMBER | STRING | IDENTIFIER | booleanLiteral | functionCall | collection | char
+
+booleanLiteral ::= TRUE | FALSE
 
 type ::= "george" //george bool
-        | "interger" //intentionally mispelled because I think its funny in the moment, will probably change ltr
+        | "interger" //intentional misspelling
         | "String"
         | "Matrix[]"
-        |
+        | "char"
+        | "dos"
 
 expression ::= binaryExpression
                 | unaryExpression
                 | parenthesizedExpression
 
-functionCall ::= IDENTIFIER "(" argumentList?")"
+parenthesizedExpression ::=  "(" expression ")"
 
-argumentList ::= expression
+binaryExpression ::= primary binaryOperator primary
+                 | parenthesizedExpression binaryOperator parenthesizedExpression
+                 | parenthesizedExpression binaryOperator primary
+                 | primary binaryOperator parenthesizedExpression
 
+binaryOperator ::=  booleanOperator | comparator | simpleMathOperator
 
-functionDefinition ::= IDENTIFIER ":" "(" argumentList?")" returnType
-
-returnType ::= primary
-
-parenthesizedExpression ::= primary binaryOperater expression
-
-unaryExpression ::= unaryOperator primary
-
-unaryOperator ::= "!" | "-"
-
-
-binaryExpression ::= expression binaryOperater expression
-
-binaryOperater ::= simpleMathOperator | comparator | booleanOperator
+comparator ::= "==" | "=/=" | "<" | "<=" | ">=" | ">"
 
 booleanOperator ::= "&&" | "||"
 
+simpleMathOperator ::= "+" | "-" | "/" | "x^" | "%" | "*"
 
-primary ::= NUMBER | STRING | IDENTIFIER | booleanLiteral | functionCall | "-" NUMBER
+unaryExpression ::= unaryOperator primary
+                | unaryOperator parenthesizedExpression
 
-booleanLiteral ::= TRUE | FALSE
+unaryOperator ::= "!" | "-"
+// functions
 
-matrixMath ::= expression simpleMathOperator expression
-    | matrix simpleMathOperator expression
-    | matrix simpleMathOperator matrix
+functionCall ::= IDENTIFIER "(" callParameters?")"
 
-matrix ::= expressionList
-        | expression
+callParameters ::= callParameter
+                | callParameter "," callParameters
+callParameter ::= IDENTIFER
 
-expressionList ::= expressionList
-               | expression
+functionDefinition ::= IDENTIFIER ":" "(" parameterList?")" returnType block
 
-simpleMathOperator ::= "+" | "-" | "/" | "x^" | "%" |
+ parameterList ::= parameter
+                | parameter "," parameterList
 
-comparator ::= "==" | "=/=" | "<" | "<=" | ">=" | ">"|
+parameter ::= type IDENTIFER
+
+returnType ::= type | "void"
+
+returnStatement ::= "return" expression | functionCall
+
+conditional ::= ifStatement ifElseStatement* elseStatement?
 
 ifStatement ::= "if" "("expression")" block
 
-ifelseStatment ::= ["else" "("expression")" block]
+ifElseStatement ::= "ifelse" "("expression")" block
 
-elseStatment ::= ["else" "("expression")" block]
-
-conditional ::= ifStatement ifelseStatment elseStatment
+elseStatement ::= "else" "("expression")" block
 
 // loops
 loop ::= forLoop | whileLoop
 forLoop ::= "for" "(" initialization ";" expression ";" assignment ")" block
+         | "foreach" "("IDENTIFIER | collection")" block
 
 whileLoop ::= "while "( expression ) block
+          | "indefinetleyPreform"  block
+          | "whileThisIsBasicallyTrue" "("expression")" NUMBER "%" block
+
+collection ::= array | linkedList | matrix
+
+collectionActivities ::= collectionInitialization collextionDeclaration collectionAssingment
+
+collectionInitialization ::= IDENTIFER "[]" "=" "array"
+
+collextionDeclaration
+
+collectionAssingment ::=
+
+array ::= "[" expression { "," expression } "]"
+
+linkedList ::= "<" expression { "," expression } ">"
+
 
 
 
