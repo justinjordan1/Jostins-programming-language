@@ -25,7 +25,7 @@ varAssignment ::= IDENTIFER "=" expression
 
 unaryVarAssignment ::= "++" IDENTIFIER | "--" IDENTIFIER
 
-primary ::= NUMBER | STRING | IDENTIFIER | booleanLiteral | functionCall | collection | char
+primary ::= NUMBER | STRING | IDENTIFIER | booleanLiteral | functionCall | collection | CHAR
 
 booleanLiteral ::= TRUE | FALSE
 
@@ -59,7 +59,7 @@ simpleMathOperator ::= "+" | "-" | "/" | "x^" | "%" | "*"
 unaryExpression ::= unaryOperator primary
                 | unaryOperator parenthesizedExpression
 
-unaryOperator ::= "!" | "-"
+unaryOperator ::= "!" | "-" | "i/"
 
 functionCall ::= IDENTIFIER "(" callParameters?")"
 
@@ -88,8 +88,10 @@ elseStatement ::= "else" "("expression")" block
 
 // loops
 loop ::= forLoop | whileLoop
-forLoop ::= "for" "(" varInitialization ";" expression ";" varAssignment ")" block
-         | "foreach" "("IDENTIFIER | collection")" block
+forLoop ::= "for" "(" varInitialization conditional ")" loopIncrement block
+         | "foreach" "("IDENTIFIER | collection")"loopIncrement block
+
+loopIncrement ::= "l+" | "l-"
 
 whileLoop ::= "while "( expression ) block
           | "indefinetleyPreform"  block
