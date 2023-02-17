@@ -129,7 +129,6 @@ collectionGetters ::= IDENTIFIER"["NUMBER"]"
 
 
 
-
 array ::= "[" expression { "," expression } "]"
 
 linkedList ::= "<" expression { "," expression } ">"
