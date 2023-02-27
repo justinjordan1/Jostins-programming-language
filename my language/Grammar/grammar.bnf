@@ -14,7 +14,7 @@ block ::= "{" statement "}"
 
 varActivities ::= varInitialization | varDeclaration | varAssignment | unaryVarAssignment
 
-varInitialization ::= varIdentifierList type "=" expression
+varInitialization ::= "var" varIdentifierList type "=" expression
 
 varIdentifierList ::= IDENTIFIER
                     | IDENTIFIER "," varIdentifierList
@@ -25,7 +25,7 @@ varAssignment ::= IDENTIFER "=" expression
 
 unaryVarAssignment ::= "++" IDENTIFIER | "--" IDENTIFIER
 
-primary ::= NUMBER | STRING | IDENTIFIER | booleanLiteral | functionCall | collection | CHAR
+primary ::= NUMBER | STRING | IDENTIFIER | booleanLiteral | functionCall | collection | CHAR | parenthesizedExpression
 
 booleanLiteral ::= TRUE | FALSE
 
@@ -43,10 +43,7 @@ expression ::= binaryExpression
 parenthesizedExpression ::=  "(" expression ")"
 
 binaryExpression ::= primary binaryOperator primary
-                 | parenthesizedExpression binaryOperator parenthesizedExpression
-                 | parenthesizedExpression binaryOperator primary
-                 | primary binaryOperator parenthesizedExpression
-                 //im sure theres a better way to condense this.
+
 
 binaryOperator ::=  booleanOperator | comparator | simpleMathOperator
 
@@ -65,7 +62,7 @@ functionCall ::= IDENTIFIER "(" callParameters?")"
 
 callParameters ::= callParameter
                 | callParameter "," callParameters
-callParameter ::= IDENTIFER
+callParameter ::= expression
 
 functionDefinition ::= IDENTIFIER ":" "(" parameterList?")" returnType block
 
