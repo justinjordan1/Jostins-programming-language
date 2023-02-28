@@ -1,4 +1,6 @@
-import lexicalAnalysis.Lexeme;
+package src;
+
+import src.lexicalAnalysis.Lexeme;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -14,7 +16,7 @@ public class C10H15N {
     public static void main(String[] args) throws IOException {
         try {
             if (args.length == 1) runFile(args[0]);
-            else { System.out.println("Usage: C10H15N [path to .mexplainerth file]"); System.exit(64);
+            else { System.out.println("Usage: src.C10H15N [path to .mexplainerth file]"); System.exit(64);
             }
         } catch (IOException exception) {
             throw new IOException(exception.toString());

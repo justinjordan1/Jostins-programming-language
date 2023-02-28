@@ -1,6 +1,4 @@
-package lexicalAnalysis;
-
-import java.util.ArrayList;
+package src.lexicalAnalysis;
 
 public class Lexeme {
     private Types type;

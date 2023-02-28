@@ -1,4 +1,6 @@
-package lexicalAnalysis;
+package src.lexicalAnalysis;
+
+import src.C10H15N;
 
 import java.util.ArrayList;
 import java.util.HashMap;

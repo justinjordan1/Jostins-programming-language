@@ -1,4 +1,4 @@
-package lexicalAnalysis;
+package src.lexicalAnalysis;
 
 public enum Types {
     //DATTA TYPES
