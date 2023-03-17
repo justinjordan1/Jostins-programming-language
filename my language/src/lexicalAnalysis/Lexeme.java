@@ -1,8 +1,8 @@
 package src.lexicalAnalysis;
 
-public class Lexeme {
-    private Types type;
-    private Integer lineNumber;
+public final class Lexeme {
+    private final Types type;
+    private final Integer lineNumber;
     private Integer intValue;
     private Double doubleValue;
     private Boolean booleanValue;
@@ -62,4 +62,37 @@ public class Lexeme {
         return booleanValue;
     }
 
+    public void setIntValue(int intValue) {
+        this.intValue = intValue;
+    }
+
+    public void setDoubleValue(double doubleValue) {
+        this.doubleValue = doubleValue;
+    }
+
+    public void setBooleanValue(boolean booleanValue) {
+        this.booleanValue = booleanValue;
+    }
+
+    public String toString() {
+        String str = type + " Line: " + lineNumber + " ";
+        if (type == Types.INTERGER) {
+            addvalue(str);
+            str += intValue;
+        } else if (type == Types.DOS) {
+            addvalue(str);
+            str += doubleValue;
+        } else if (type == Types.GEORGE) {
+            addvalue(str);
+            str += booleanValue;
+        } else if (type == Types.STRING) {
+            addvalue(str);
+            str += "\"" + stringValue + "\"";
+        }
+        return str;
+    }
+
+    public void addvalue(String str) {
+        str += " value:";
+    }
 }

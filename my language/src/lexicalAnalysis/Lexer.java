@@ -5,6 +5,10 @@ import src.C10H15N;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+
+import static src.C10H15N.syntaxError;
+
+
 public class Lexer {
     private String source;
     private ArrayList<Lexeme> lexemes = new ArrayList<>();
@@ -15,6 +19,228 @@ public class Lexer {
 
     private final HashMap<String, Types> keywords;
 
+
+    //Core Lexing
+    public ArrayList<Lexeme> lex() {
+        while (!isAtEnd()) {
+            startOfCurrentLexeme = currentPosition;
+            Lexeme nextLexeme = getNextLexeme();
+            if (nextLexeme != null)
+                lexemes.add(nextLexeme);
+        }
+        lexemes.add(new Lexeme(Types.END_OF_FILE, lineNumber));
+        return lexemes;
+    }
+
+
+    private Lexeme getNextLexeme() {
+        char c = advance();
+
+        switch (c) {
+            case ' ', '\t', '\n', '\r' -> {
+                return null;
+            }
+
+            case '(' -> {
+                return new Lexeme(Types.OPAREN, lineNumber);
+            }
+            case ')' -> {
+                return new Lexeme(Types.CPAREN, lineNumber);
+            }
+            case ',' -> {
+                return new Lexeme(Types.COMMA, lineNumber);
+            }
+            case '.' -> {
+                return new Lexeme(Types.PERIOD, lineNumber);
+            }
+            case ':' -> {
+                return new Lexeme(Types.FUNC_DEFINITION, lineNumber);
+            }
+            case '%' -> {
+                return new Lexeme(Types.PERCENTERROR, lineNumber);
+            }
+            case '*' -> {
+                return new Lexeme(Types.MULTIPLY, lineNumber);
+            }
+            case '/' -> {
+                return new Lexeme(Types.DIVIDE, lineNumber);
+            }
+            case '˚' -> {
+                return new Lexeme(Types.DOT_PRODUCT, lineNumber);
+            }
+            case 'î' -> {
+                return new Lexeme(Types.EXPONENTIATE, lineNumber);
+            }
+            case 'í' -> {
+                return new Lexeme(Types.INVERSE, lineNumber);
+            }
+            case '|' -> {
+                return new Lexeme(Types.OR, lineNumber);
+            }
+            case '&' -> {
+                return new Lexeme(Types.AND, lineNumber);
+            }
+            case '!' -> {
+                return new Lexeme(Types.NOT, lineNumber);
+            }
+            case ';' -> {
+                return new Lexeme(Types.SEMI_COLON, lineNumber);
+            }
+            case '`' -> {
+                return new Lexeme(Types.MATRIXSIZE, lineNumber);
+            }
+            case '{' -> {
+                return new Lexeme(Types.OBRACKET, lineNumber);
+            }
+            case '}' -> {
+                return new Lexeme(Types.CBRACKET, lineNumber);
+            }
+            case '+' -> {
+                if (match('+'))
+                    return new Lexeme(Types.PLUS_PLUS, lineNumber);
+                else
+                    return new Lexeme(Types.PLUS, lineNumber);
+            }
+            case '-' -> {
+                if (match('-'))
+                    return new Lexeme(Types.MINUS_MINUS, lineNumber);
+                else
+                    return new Lexeme(Types.MINUS, lineNumber);
+            }
+            case '[' -> {
+                if (match('['))
+                    return new Lexeme(Types.OMATRIX, lineNumber);
+
+                else
+                    return new Lexeme(Types.OBRACKET, lineNumber);
+            }
+            case ']' -> {
+                if (match(']'))
+                    return new Lexeme(Types.CMATRIX, lineNumber);
+
+                else
+                    return new Lexeme(Types.CBRACKET, lineNumber);
+            }
+            case '<' -> {
+                if (match('='))
+                    return new Lexeme(Types.LESS_EQ, lineNumber);
+                else if (match('<'))
+                    return new Lexeme(Types.OARRAYLIST, lineNumber);
+                else
+                    return new Lexeme(Types.LESS, lineNumber);
+            }
+            case '>' -> {
+                if (match('='))
+                    return new Lexeme(Types.GREATER_EQ, lineNumber);
+                else if (match('<'))
+                    return new Lexeme(Types.CARRAYLIST, lineNumber);
+                else
+                    return new Lexeme(Types.GREATER, lineNumber);
+            }
+            case '¬' -> {
+                if (match('+'))
+                    return new Lexeme(Types.LOOPINCREMENTPLUS, lineNumber);
+                else if (match('-'))
+                    return new Lexeme(Types.LOOPINCREMENTMINUS, lineNumber);
+                else
+                    return new Lexeme(Types.GREATER, lineNumber);
+            }
+            case '=' -> {
+                if (match('='))
+                    return new Lexeme(Types.EQUALS, lineNumber);
+                else
+                    return new Lexeme(Types.ASSIGNMENT, lineNumber);
+            }
+            case '"' -> {
+                return lexString();
+            }
+            case 'ç' -> {
+                return lexComment();
+            }
+            default -> {
+                if (isDigit(c)) {
+                    return lexNumber();
+                } else if (isAlpha(c)) {
+                    return lexIdentifierOrKeyword();
+                } else {
+                    error("Unrecognized character '" + c + "'");
+                    return null;
+                }
+            }
+        }
+    }
+
+    //I only support block comments, starting with ç and ending with ø
+    private Lexeme lexComment() {
+        while (!(isAtEnd() || peek() == 'ø')) {
+            advance();
+        }
+        return null;
+    }
+
+    private Lexeme lexIdentifierOrKeyword() {
+        while (isAlphaNumeric(peek())) {
+            advance();
+        }
+
+        String text = source.substring(startOfCurrentLexeme, currentPosition);
+        Types type = keywords.get(text);
+
+
+        if (type == null) {
+            return new Lexeme(Types.IDENTIFIER, lineNumber, text);
+        } else if (type == Types.TRUE) {
+            return new Lexeme(Types.GEORGE, lineNumber, true);
+        } else if (type == Types.FALSE) {
+            return new Lexeme(Types.GEORGE, lineNumber, false);
+        }
+
+
+        return new Lexeme(type, lineNumber);
+    }
+
+
+    private Lexeme lexNumber() {
+        boolean isInteger = true;
+        while (isDigit(peek())) advance();
+        if (peek() == '.') {
+            isInteger = false;
+            if (!isDigit(peekNext())) {
+                String malformedReal = source.substring(startOfCurrentLexeme, currentPosition + 1);
+                syntaxError("Malformed Real Number: " + malformedReal + " ", currentPosition);
+            }
+            advance();
+
+            while (isDigit(peek())) advance();
+        }
+        String numberString = source.substring(startOfCurrentLexeme, currentPosition);
+        if (isInteger) {
+            int intValue = Integer.parseInt(numberString);
+            return new Lexeme(Types.INTERGER, lineNumber, intValue);
+        } else {
+            double realValue = Double.parseDouble(numberString);
+            return new Lexeme(Types.DOS, lineNumber, realValue);
+        }
+
+    }
+
+    private Lexeme lexString() {
+        while (!(isAtEnd() || peek() == '"')) {
+            advance();
+        }
+
+        String str = source.substring(startOfCurrentLexeme + 1, currentPosition);
+
+        if (isAtEnd()) {
+            error("Unterminated string: '" + str + "'");
+        } else {
+            advance();
+        }
+
+        return new Lexeme(Types.STRING, lineNumber, str);
+    }
+
+
     public Lexer(String source) {
         this.source = source;
         this.lexemes = new ArrayList<>();
@@ -22,7 +248,9 @@ public class Lexer {
         this.currentPosition = 0;
         this.startOfCurrentLexeme = 0;
         this.lineNumber = 1;
+
     }
+
 
     private boolean isAtEnd() {
         return currentPosition >= source.length();
@@ -38,12 +266,13 @@ public class Lexer {
         return source.charAt(currentPosition + 1);
     }
 
-    private boolean match(char expected) {
+    boolean match(char expected) {
         if (isAtEnd() || source.charAt(currentPosition) != expected)
             return false;
         currentPosition++;
         return true;
     }
+
 
     private char advance() {
         char currentChar = source.charAt(currentPosition);
@@ -52,6 +281,7 @@ public class Lexer {
         currentPosition++;
         return currentChar;
     }
+
 
     // Supplemental Helper Methods
     private boolean isDigit(char c) {
@@ -66,8 +296,8 @@ public class Lexer {
         return isAlpha(c) || isDigit(c);
     }
 
-    private void eror(String message) {
-        C10H15N.syntaxError(message, lineNumber);
+    private void error(String message) {
+        syntaxError(message, lineNumber);
     }
 
 
@@ -81,13 +311,14 @@ public class Lexer {
         keywords.put("matrix", Types.MATRIX);
         keywords.put("char", Types.CHAR);
         keywords.put("dos", Types.DOS);
+        keywords.put("true", Types.TRUE);
+        keywords.put("false", Types.FALSE);
 
         // Initialization
-        keywords.put("assignment", Types.ASSIGNMENT);
+
         keywords.put("var", Types.VAR);
-        keywords.put("arraylisttoken", Types.ARRAYLISTTOKEN);
-        keywords.put("matrixtoken", Types.MATRIXTOKEN);
-        keywords.put("arraytoken", Types.ARRAYTOKEN);
+        keywords.put("return", Types.RETURN);
+
         keywords.put("matrixsize", Types.MATRIXSIZE);
 
         // Looping
@@ -98,37 +329,14 @@ public class Lexer {
         keywords.put("foreach", Types.FOREACH);
         keywords.put("loopincrementplus", Types.LOOPINCREMENTPLUS);
         keywords.put("loopincrementminus", Types.LOOPINCREMENTMINUS);
-        keywords.put("percenterror", Types.PERCENTERROR);
 
-        // Operators
-        keywords.put("plus", Types.PLUS);
-        keywords.put("plusplus", Types.PLUS_PLUS);
-        keywords.put("minus", Types.MINUS);
-        keywords.put("minusminus", Types.MINUS_MINUS);
-        keywords.put("inverse", Types.INVERSE);
-        keywords.put("multiply", Types.MULTIPLY);
-        keywords.put("divide", Types.DIVIDE);
-        keywords.put("exponentiate", Types.EXPONENTIATE);
-        keywords.put("and", Types.AND);
-        keywords.put("or", Types.OR);
-        keywords.put("not", Types.NOT);
-        keywords.put("minus_unary", Types.MINUS_UNARY);
 
         // Conditionals
         keywords.put("if", Types.IF);
         keywords.put("elseif", Types.ELSEIF);
         keywords.put("else", Types.ELSE);
 
-        // Tokens
-        keywords.put("obracket", Types.OBRACKET);
-        keywords.put("cbracket", Types.CBRACKET);
-        keywords.put("oparen", Types.OPAREN);
-        keywords.put("cparen", Types.CPAREN);
-        keywords.put("oarraylist", Types.OARRAYLIST);
-        keywords.put("semi_colon", Types.SEMI_COLON);
-
         return keywords;
     }
-
 
 }

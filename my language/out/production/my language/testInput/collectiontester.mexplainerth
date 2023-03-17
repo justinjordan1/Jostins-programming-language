@@ -1,0 +1,8 @@
+rotation int[[]] = [[ cos(90), -sin(90)],[ sin(90), cos(90 ]];
+
+rotation * [[1,2]];
+
+twobytwo int[[]] = 2˚2;
+
+twobytwo[[1,2]] = 1;
+

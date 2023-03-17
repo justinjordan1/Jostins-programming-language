@@ -103,11 +103,11 @@ expressionList ::= expression
 
 collectionActivities ::= collectionInitialization collectionDeclaration collectionAssingment collectionGetters
 
-collectionInitialization ::= "collection" IDENTIFER  type"[]" "=" array
-                          | "collection" IDENTIFER type"[]" "=" "[" expressionList "]"
-                          | "collection" IDENTIFIER type"<<>>" "=" "<<" expressionList ">>"
-                          | "collection" IDENTIFER  type"<<>>" "=" linkedList
-                          | "collection" IDENTIFIER type"[[]]"  "=" "[[" expressionList {",," expressionList} "]]"
+collectionInitialization ::= IDENTIFER  type"[]" "=" array
+                          | IDENTIFER type"[]" "=" "[" expressionList "]"
+                          | IDENTIFIER type"<<>>" "=" "<<" expressionList ">>"
+                          | IDENTIFER  type"<<>>" "=" linkedList
+                          | IDENTIFIER type"[[]]"  "=" "[[" expressionList {",," expressionList} "]]"
 
 collectionDeclaration ::= IDENTIFIER type"["NUMBER"]"
                         | IDENTIFIER type "<<>>"
@@ -130,7 +130,7 @@ collectionGetters ::= IDENTIFIER"["NUMBER"]"
 
 array ::= "[" expression { "," expression } "]"
 
-linkedList ::= "<<" expression { "," expression } ">>"
+linkedList ::= "<" expression { "," expression } ">"
 
 matrix ::= "[[" expressionList {"," expressionList} "]]"
 
