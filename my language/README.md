@@ -20,22 +20,23 @@ ___
 
 ## Syntax and stuff
 
-Statically typed, just in case I want to build a compiler over the summer
+Statically typed, just in case I want to build a compiler over the summer block comments are supported.`ç` starts
+one,`ø` ends one. (key combos are option c and o respectively)
 
 ### Variable Declarations
 
 _____
 
-- initialization  `Name type = /value/;` or `Name1,Name2... type = /value/;`
-- Declaration `Name type;`
-- Assignment `Name = /value/;`
+- initialization  `var IDENTIFIERLIST type = expression;`
+- Declaration `var IDENTIFIERLIST type;`
+- Assignment `IDENTIFIER = expression`
 
 ### Types
 
 | Syntax    | Description |
 |-----------|------------|
 | Boolean   | `George`   |
-| Integer   | `int`      |
+| Interger  | `int`      |
 | String    | `String`   |
 | Charector | `char`     |
 | Double    | `dos`      |
@@ -44,9 +45,7 @@ ____
 
 ### Functions
 
-- Declaration `functionName: (p1,p2...etc) returnType {}`
-- lambda Functions ` p1: p1^ 2`
-  (p as an example keyword of a parameter, which are formatted like `type name`)
+- Declaration `functionName: returnType(p1,p2...etc) returnType {}`
 - The absence of a return statement will be handled by returning the last line of the function. To return `void`, do
   exactly that
 
@@ -64,8 +63,8 @@ ___
 
 ##### for loops
 
-- `foreach var|vars {} ` standard for each
-- `for (name=initializedValue conditional)+ {}` for loop
+- `foreach (var ∆ vars) {} `
+- `for (variable initialization; expression)¬+ {}` for loop
 
 ##### Conditionals
 
@@ -80,52 +79,50 @@ if conditional {
 
 ### Operaters
 
-| Operaters (these will also work with all matricies, unless theres an asterisk)                                                           | symbol     |
-|------------------------------------------------------------------------------------------------------------------------------------------|------------|
-| sum                                                                                                                                      | +          |
-| multiply                                                                                                                                 | *          |
-| divide                                                                                                                                   | /          |
-| subtract                                                                                                                                 | -          |
-| exponentiate                                                                                                                             | x^         |
-| inverse                                                                                                                                  | i/         | 
-| modulus                                                                                                                                  | %          |
-| plus or minus (creates an array with those values)                                                                                       | +/-        |
-| equal to                                                                                                                                 | ==         |
-| unequal to                                                                                                                               | =/=        |
-| All standard comparison operands*                                                                                                        | <,>,<=,>=  |
-| standard boolean operations, but when used on collections theyre interpreted as set notation (if it makes sense). ex`&&` is intersection | &&, or, !, ^^ |
-| incrementors and decrementors*                                                                                                           | ++,--      |
+| Operaters (these will also work with all matricies, unless theres an asterisk)                                                           | symbol    |
+|------------------------------------------------------------------------------------------------------------------------------------------|-----------|
+| sum                                                                                                                                      | +         |
+| multiply (cross product)                                                                                                                 | *         |
+| divide                                                                                                                                   | /         |
+| subtract                                                                                                                                 | -         |
+| exponentiate                                                                                                                             | î         |
+| inverse                                                                                                                                  | í         | 
+| modulus                                                                                                                                  | %         |
+| dot product                                                                                                                              | ˚         |
+| equal to                                                                                                                                 | ==        |
+| unequal to                                                                                                                               | =/=       |
+| All standard comparison operands*                                                                                                        | <,>,<=,>= |
+| standard boolean operations, but when used on collections theyre interpreted as set notation (if it makes sense). ex`&&` is intersection | &, !, OR  |
+| incrementors and decrementors*                                                                                                           | ++,--     |
 
 ----
 
 ### Collections
 
-Will try to support arrays &linked lists. Maybe a matrices data structure
-
 Declarations /initialization
 
-- `name int[] = 1,2,3,4;`
-- `name int[] size ;`
+- `collection name int[] = 1,2,3,4;`
+- `collection name int[4];`
+- `collection linkedList LinkedList<Integer]<<>> = << 1, 2, 3, 4, 5 >> `
+
+- `collection matrix int[][] = [[1, 2, 3]\[4, 5, 6]\ [7, 8, 9]]`
+- `collection name int[5]`
+- `collection name int<<>>`
+- `collection name int[[]] = NUMBER'NUMBER`
 
 Getter
 
-- `name[0]`
-
-Declaration
-
-- `name Ll<> = 1,2,3,4;`
-
-Getter
-
-- `name<0>`
+- ` GET name<0>, GET name[0], GET name[[0,0,0]]`
 
 *Matrix Syntax*
+
 Declaration -`name matrix = 2x2;`
 
-- `name matrix = [1,2],[3,4];`
-  Getter
+- `name matrix = [1,2\3,4];`
 
-- `name matrix[0,0;]`
+Getter
+
+- `name matrix[0,0]`
 
 ----
 
@@ -136,6 +133,11 @@ Create a canvas `canvas (rgb) size(integer,integer)` (also creates a matrix/2d a
 You manipulate the canvas by changing the rgb values in the 2darray
 
 Maybe support for standard function LateX function notation, and a graphing calculator built on top of the canvas stuff.
+
+### Keywords Enumeration
+
+WHILE, INDEFINITELYPERFORM, WHILETHISISBASICALLYTRUE, FOR, FOREACH, GEORGE, INTERGER, STRING, MATRIX, CHAR, DOS, GET,
+COLLECTION
 
 
 

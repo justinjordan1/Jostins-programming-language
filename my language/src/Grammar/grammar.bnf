@@ -21,7 +21,7 @@ varInitialization ::= "var" varIdentifierList type "=" expression
 varIdentifierList ::= IDENTIFIER
                     | IDENTIFIER "," varIdentifierList
 
-varDeclaration ::= IDENTIFIER type
+varDeclaration ::= "var" IDENTIFIER type
 
 varAssignment ::= IDENTIFER "=" expression
 
@@ -79,6 +79,8 @@ returnStatement ::= "return" expression | functionCall
 
 conditional ::= ifStatement ifElseStatement* elseStatement?
 
+
+
 ifStatement ::= "if" "("expression")" block
 
 ifElseStatement ::= "ifelse" "("expression")" block
@@ -88,7 +90,7 @@ elseStatement ::= "else" "("expression")" block
 // loops
 loop ::= forLoop | whileLoop
 forLoop ::= "for" "(" varInitialization conditional ")" loopIncrement block
-         | "foreach" "("IDENTIFIER | collection")"loopIncrement block
+         | "foreach" "("IDENTIFIER "∆" collection")"loopIncrement block
 
 loopIncrement ::= "¬+" | "¬-"
 
@@ -107,11 +109,11 @@ collectionInitialization ::= "collection" IDENTIFER  type"[]" "=" array
                           | "collection" IDENTIFER type"[]" "=" "[" expressionList "]"
                           | "collection" IDENTIFIER type"<<>>" "=" "<<" expressionList ">>"
                           | "collection" IDENTIFER  type"<<>>" "=" linkedList
-                          | "collection" IDENTIFIER type"[[]]"  "=" "[[" expressionList {",," expressionList} "]]"
+                          | "collection" IDENTIFIER type"[[]]"  "=" "[[" expressionList {"\\" expressionList} "]]"
 
-collectionDeclaration ::= IDENTIFIER type"["NUMBER"]"
-                        | IDENTIFIER type "<<>>"
-                        | IDENTIFIER type"[[]]" "=" NUMBER"˚"NUMBER
+collectionDeclaration ::= "collection" IDENTIFIER type"["NUMBER"]"
+                        | "collection"  IDENTIFIER type "<<>>"
+                        |"collection"  IDENTIFIER type"[[]]" "=" NUMBER"`"NUMBER
 
 collectionAssingment ::= IDENTIFIER "=" array
                        | IDENTIFIER "=" linkedList
@@ -119,12 +121,12 @@ collectionAssingment ::= IDENTIFIER "=" array
                        | IDENTIFIER"["NUMBER"]" "=" expression
                        | IDENTIFIER"<<"NUMBER">>" "=" expression
                        | IDENTIFIER"<<"+">>" "=" expression //add to the end of a linked list
-                       | IDENTIFIER"<<"0+">>" "=" expression //adds to the front of a linked list
+                       | IDENTIFIER"<<"+0">>" "=" expression //adds to the front of a linked list
                        | IDENTIFIER"[["NUMBER "," NUMBER"]]" "=" expression
 
-collectionGetters ::= IDENTIFIER"["NUMBER"]"
-                    | IDENTIFIER"<<"NUMBER">>"
-                    | IDENTIFIER"[["NUMBER "," NUMBER"]]"
+collectionGetters ::= "GET" IDENTIFIER"["NUMBER"]"
+                    | "GET" IDENTIFIER"<<"NUMBER">>"
+                    | "GET" IDENTIFIER"[["NUMBER {"," NUMBER"}]]"
 
 
 
@@ -132,7 +134,7 @@ array ::= "[" expression { "," expression } "]"
 
 linkedList ::= "<<" expression { "," expression } ">>"
 
-matrix ::= "[[" expressionList {"," expressionList} "]]"
+matrix ::= "[[" expressionList {"\\" expressionList} "]]"
 
 
 

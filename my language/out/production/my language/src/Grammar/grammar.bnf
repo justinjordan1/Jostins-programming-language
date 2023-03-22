@@ -88,7 +88,7 @@ elseStatement ::= "else" "("expression")" block
 // loops
 loop ::= forLoop | whileLoop
 forLoop ::= "for" "(" varInitialization conditional ")" loopIncrement block
-         | "foreach" "("IDENTIFIER | collection")"loopIncrement block
+         | "foreach" "("IDENTIFIER "∆" collection")"loopIncrement block
 
 loopIncrement ::= "¬+" | "¬-"
 
@@ -103,15 +103,15 @@ expressionList ::= expression
 
 collectionActivities ::= collectionInitialization collectionDeclaration collectionAssingment collectionGetters
 
-collectionInitialization ::= IDENTIFER  type"[]" "=" array
-                          | IDENTIFER type"[]" "=" "[" expressionList "]"
-                          | IDENTIFIER type"<<>>" "=" "<<" expressionList ">>"
-                          | IDENTIFER  type"<<>>" "=" linkedList
-                          | IDENTIFIER type"[[]]"  "=" "[[" expressionList {",," expressionList} "]]"
+collectionInitialization ::= "collection" IDENTIFER  type"[]" "=" array
+                          | "collection" IDENTIFER type"[]" "=" "[" expressionList "]"
+                          | "collection" IDENTIFIER type"<<>>" "=" "<<" expressionList ">>"
+                          | "collection" IDENTIFER  type"<<>>" "=" linkedList
+                          | "collection" IDENTIFIER type"[[]]"  "=" "[[" expressionList {"\\" expressionList} "]]"
 
-collectionDeclaration ::= IDENTIFIER type"["NUMBER"]"
-                        | IDENTIFIER type "<<>>"
-                        | IDENTIFIER type"[[]]" "=" NUMBER"˚"NUMBER
+collectionDeclaration ::= "collection" IDENTIFIER type"["NUMBER"]"
+                        | "collection"  IDENTIFIER type "<<>>"
+                        |"collection"  IDENTIFIER type"[[]]" "=" NUMBER"`"NUMBER
 
 collectionAssingment ::= IDENTIFIER "=" array
                        | IDENTIFIER "=" linkedList
@@ -119,20 +119,20 @@ collectionAssingment ::= IDENTIFIER "=" array
                        | IDENTIFIER"["NUMBER"]" "=" expression
                        | IDENTIFIER"<<"NUMBER">>" "=" expression
                        | IDENTIFIER"<<"+">>" "=" expression //add to the end of a linked list
-                       | IDENTIFIER"<<"0+">>" "=" expression //adds to the front of a linked list
+                       | IDENTIFIER"<<"+0">>" "=" expression //adds to the front of a linked list
                        | IDENTIFIER"[["NUMBER "," NUMBER"]]" "=" expression
 
-collectionGetters ::= IDENTIFIER"["NUMBER"]"
-                    | IDENTIFIER"<<"NUMBER">>"
-                    | IDENTIFIER"[["NUMBER "," NUMBER"]]"
+collectionGetters ::= "GET" IDENTIFIER"["NUMBER"]"
+                    | "GET" IDENTIFIER"<<"NUMBER">>"
+                    | "GET" IDENTIFIER"[["NUMBER "," NUMBER"]]"
 
 
 
 array ::= "[" expression { "," expression } "]"
 
-linkedList ::= "<" expression { "," expression } ">"
+linkedList ::= "<<" expression { "," expression } ">>"
 
-matrix ::= "[[" expressionList {"," expressionList} "]]"
+matrix ::= "[[" expressionList {"\\" expressionList} "]]"
 
 
 

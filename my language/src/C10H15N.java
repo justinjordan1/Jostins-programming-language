@@ -1,5 +1,6 @@
 package src;
 
+import src.Recognizer.Recognizer;
 import src.lexicalAnalysis.Lexeme;
 import src.lexicalAnalysis.Lexer;
 
@@ -36,9 +37,12 @@ public class C10H15N {
         String source = getSourceCodeFromFile(path);
         Lexer lexer = new Lexer(source);
         ArrayList<Lexeme> lexemes = lexer.lex();
-        for (Lexeme lexeme : lexemes) {
-            System.out.println(lexeme);
-        }
+        Recognizer recognizer = new Recognizer(lexemes);
+
+        //for (Lexeme lexeme : lexemes) {
+        //   System.out.println(lexeme);
+        // }
+
         for (String syntaxError : syntaxErrorMessages) {
             System.out.println(syntaxError);
         }

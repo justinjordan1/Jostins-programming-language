@@ -83,6 +83,9 @@ public class Lexer {
             case '!' -> {
                 return new Lexeme(Types.NOT, lineNumber);
             }
+            case '\\' -> {
+                return new Lexeme(Types.MATRIX_SEPERATOR, lineNumber);
+            }
             case ';' -> {
                 return new Lexeme(Types.SEMI_COLON, lineNumber);
             }
@@ -90,10 +93,13 @@ public class Lexer {
                 return new Lexeme(Types.MATRIXSIZE, lineNumber);
             }
             case '{' -> {
-                return new Lexeme(Types.OBRACKET, lineNumber);
+                return new Lexeme(Types.OBRACE, lineNumber);
             }
             case '}' -> {
-                return new Lexeme(Types.CBRACKET, lineNumber);
+                return new Lexeme(Types.CBRACE, lineNumber);
+            }
+            case '∆' -> {
+                return new Lexeme(Types.FOREACH_DELTA, lineNumber);
             }
             case '+' -> {
                 if (match('+'))
@@ -132,7 +138,7 @@ public class Lexer {
             case '>' -> {
                 if (match('='))
                     return new Lexeme(Types.GREATER_EQ, lineNumber);
-                else if (match('<'))
+                else if (match('>'))
                     return new Lexeme(Types.CARRAYLIST, lineNumber);
                 else
                     return new Lexeme(Types.GREATER, lineNumber);
@@ -172,7 +178,7 @@ public class Lexer {
 
     //I only support block comments, starting with ç and ending with ø
     private Lexeme lexComment() {
-        while (!(isAtEnd() || peek() == 'ø')) {
+        while (!(isAtEnd() || match('ø'))) {
             advance();
         }
         return null;
@@ -182,7 +188,7 @@ public class Lexer {
         while (isAlphaNumeric(peek())) {
             advance();
         }
-
+        //is thi
         String text = source.substring(startOfCurrentLexeme, currentPosition);
         Types type = keywords.get(text);
 
@@ -306,7 +312,7 @@ public class Lexer {
 
         // Data types
         keywords.put("george", Types.GEORGE);
-        keywords.put("integer", Types.INTERGER);
+        keywords.put("interger", Types.INTERGER);
         keywords.put("string", Types.STRING);
         keywords.put("matrix", Types.MATRIX);
         keywords.put("char", Types.CHAR);
@@ -318,7 +324,7 @@ public class Lexer {
 
         keywords.put("var", Types.VAR);
         keywords.put("return", Types.RETURN);
-
+        keywords.put("collection", Types.COLLECTION);
         keywords.put("matrixsize", Types.MATRIXSIZE);
 
         // Looping
@@ -329,7 +335,8 @@ public class Lexer {
         keywords.put("foreach", Types.FOREACH);
         keywords.put("loopincrementplus", Types.LOOPINCREMENTPLUS);
         keywords.put("loopincrementminus", Types.LOOPINCREMENTMINUS);
-
+        keywords.put("break", Types.BREAK);
+        keywords.put("get", Types.GET);
 
         // Conditionals
         keywords.put("if", Types.IF);
