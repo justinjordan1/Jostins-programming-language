@@ -1,6 +1,8 @@
 package src;
 
-import src.Recognizer.Recognizer;
+import src.Evaluation.Environment;
+import src.Evaluation.Evaluator;
+import src.Recognizer.Parser;
 import src.lexicalAnalysis.Lexeme;
 import src.lexicalAnalysis.Lexer;
 
@@ -35,17 +37,18 @@ public class C10H15N {
     private static void runFile(String path) throws IOException {
         System.out.println("Running" + path + "...");
         String source = getSourceCodeFromFile(path);
+        // Lexing
         Lexer lexer = new Lexer(source);
         ArrayList<Lexeme> lexemes = lexer.lex();
-        Recognizer recognizer = new Recognizer(lexemes);
-
-        //for (Lexeme lexeme : lexemes) {
-        //   System.out.println(lexeme);
-        // }
-
-        for (String syntaxError : syntaxErrorMessages) {
-            System.out.println(syntaxError);
-        }
+// Parsing
+        Parser parser = new Parser(lexemes);
+        Lexeme programParseTree = parser.program();
+// Environments
+        Environment globalEnvironment = new Environment();
+// Evaluation
+        Evaluator evaluator = new Evaluator();
+        Lexeme programResult = evaluator.eval(programParseTree, globalEnvironment);
+        System.out.printIn("Program result: " + programResult);
     }
 
     public static void syntaxError(String message, int lineNumber) {

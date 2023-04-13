@@ -1,12 +1,32 @@
 package src.lexicalAnalysis;
 
+import java.util.ArrayList;
+
 public final class Lexeme {
     private final Types type;
-    private final Integer lineNumber;
+    private Integer lineNumber;
+    public ArrayList<Lexeme> children = new ArrayList<Lexeme>();
+    ;
     private Integer intValue;
     private Double doubleValue;
     private Boolean booleanValue;
     private String stringValue;
+
+    public Lexeme(Types type) {
+        this.type = type;
+    }
+
+    public void AddChild(Lexeme newChild) {
+        children.add(newChild);
+    }
+
+    public void addChildren(ArrayList<Lexeme> children) {
+        this.children.addAll(children);
+    }
+
+    public Lexeme getChild(int index) {
+        return children.get(index);
+    }
 
     public Lexeme(Types type, int lineNumber, String value) {
         this.type = type;
@@ -54,7 +74,7 @@ public final class Lexeme {
         return intValue;
     }
 
-    public double getDoubleValue() {
+    public double getDosValue() {
         return doubleValue;
     }
 
@@ -73,6 +93,9 @@ public final class Lexeme {
     public void setBooleanValue(boolean booleanValue) {
         this.booleanValue = booleanValue;
     }
+
+    //public Boolean isEqual(Lexeme other) {
+    //return this.isEqua}
 
     public String toString() {
         String str = type + " Line: " + lineNumber + " ";
@@ -95,4 +118,53 @@ public final class Lexeme {
     public void addvalue(String str) {
         str += " value:";
     }
+
+
+    // --------------- Printing Lexemes as Parse Trees ---------------
+
+    public void printAsParseTree() {
+        System.out.println(getPrintableTree(this, 0));
+        //System.out.println(this.children);
+
+    }
+
+
+    private static String getPrintableTree(Lexeme root, int level) {
+
+        if (root == null) return "(Empty ParseTree)";
+
+        StringBuilder treeString = new StringBuilder(root.toString());
+
+
+        StringBuilder spacer = new StringBuilder("\n");
+
+        spacer.append("\t".repeat(level));
+
+
+        int numChildren = root.children.size();
+
+        if (numChildren > 0) {
+
+            treeString.append(" (with ").append(numChildren).append(numChildren == 1 ? " child):" : " children):");
+
+            for (int i = 0; i < numChildren; i++) {
+
+                Lexeme child = root.getChild(i);
+
+                treeString
+
+                        .append(spacer).append("(").append(i + 1).append(") ")
+
+                        .append(getPrintableTree(child, level + 1));
+
+            }
+
+        }
+
+
+        return treeString.toString();
+
+    }
 }
+
+

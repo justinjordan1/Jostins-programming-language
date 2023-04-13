@@ -21,7 +21,7 @@ varInitialization ::= "var" varIdentifierList type "=" expression
 varIdentifierList ::= IDENTIFIER
                     | IDENTIFIER "," varIdentifierList
 
-varDeclaration ::= IDENTIFIER type
+varDeclaration ::= "var" IDENTIFIER type
 
 varAssignment ::= IDENTIFER "=" expression
 
@@ -79,6 +79,8 @@ returnStatement ::= "return" expression | functionCall
 
 conditional ::= ifStatement ifElseStatement* elseStatement?
 
+
+
 ifStatement ::= "if" "("expression")" block
 
 ifElseStatement ::= "ifelse" "("expression")" block
@@ -124,7 +126,7 @@ collectionAssingment ::= IDENTIFIER "=" array
 
 collectionGetters ::= "GET" IDENTIFIER"["NUMBER"]"
                     | "GET" IDENTIFIER"<<"NUMBER">>"
-                    | "GET" IDENTIFIER"[["NUMBER "," NUMBER"]]"
+                    | "GET" IDENTIFIER"[["NUMBER {"," NUMBER"}]]"
 
 
 

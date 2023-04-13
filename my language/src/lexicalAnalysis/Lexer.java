@@ -5,6 +5,7 @@ import src.C10H15N;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import src.Evaluation.Environment;
 
 import static src.C10H15N.syntaxError;
 

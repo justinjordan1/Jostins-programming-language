@@ -1,9 +1,9 @@
 ç Here are a variety of methods/snippets that are valid in my language.
-What ive been doing is editing them and forcing different errors to make sure evrything works
-at the moment theyre all valid.
+What I've been doing is editing them and forcing different errors to make sure everything works
+Have spent an inordinate amount of time debugging
 
 (all of my old Lexer test files are in an older git version)
-ø
+
 
 collection twoD interger[[]] = 2`4;
 
@@ -11,14 +11,14 @@ collection hello dos<<>>;
 
 collection asldkfj interger[4];
 
-twoD  = [[6,2\3,4\5,4\8,9]];
+
 
 var test,othertest,othertest dos = 5;
-
- for ( var test dos = 5; dos <10)¬+ {
+ø
+for ( var test dos = 5; dos < 10)¬+ {
     break;
 }
-
+ç
 hello = 5;
 
 list<<+0>> = 1;
@@ -40,6 +40,8 @@ test : dos(interger x) {
 }
 
 test(1,2,3,4,5);
+ø
+
 
 
 
