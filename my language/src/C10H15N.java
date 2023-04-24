@@ -1,10 +1,13 @@
 package src;
 
+import src.Evaluation.EnviormentTester;
 import src.Evaluation.Environment;
 import src.Evaluation.Evaluator;
+import src.Evaluation.NamedValue;
 import src.Recognizer.Parser;
 import src.lexicalAnalysis.Lexeme;
 import src.lexicalAnalysis.Lexer;
+//import testInput.EnviormentTester;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -27,6 +30,7 @@ public class C10H15N {
         } catch (IOException exception) {
             throw new IOException(exception.toString());
         }
+        // EnviormentTester.main(args);
     }
 
     private static String getSourceCodeFromFile(String path) throws IOException {
@@ -44,11 +48,17 @@ public class C10H15N {
         Parser parser = new Parser(lexemes);
         Lexeme programParseTree = parser.program();
 // Environments
-        Environment globalEnvironment = new Environment();
-// Evaluation
+
+
+        Environment globalEnvironment = new Environment(null, new ArrayList<>());
+
+        //Evaluation
+        programParseTree.printAsParseTree();
         Evaluator evaluator = new Evaluator();
         Lexeme programResult = evaluator.eval(programParseTree, globalEnvironment);
-        System.out.printIn("Program result: " + programResult);
+        printErrors();
+        System.out.println("Program result: " + programResult);
+
     }
 
     public static void syntaxError(String message, int lineNumber) {

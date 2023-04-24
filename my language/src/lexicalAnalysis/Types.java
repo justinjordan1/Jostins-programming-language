@@ -1,7 +1,7 @@
 package src.lexicalAnalysis;
 
 public enum Types {
-    //DATTA TYPES
+    //DATA TYPES
     GEORGE, INTERGER, STRING, MATRIX, CHAR, DOS, TRUE, FALSE,
 
 
@@ -14,7 +14,7 @@ public enum Types {
 
     //operators
     PLUS, PLUS_PLUS, MINUS, MINUS_MINUS, INVERSE, MULTIPLY, DIVIDE,
-    EXPONENTIATE, AND, OR, NOT, MINUS_UNARY, DOT_PRODUCT,
+    EXPONENTIATE, AND, OR, NOT, MINUS_UNARY, DOT_PRODUCT, MOD,
 
     //conditionals
     IF, ELSEIF, ELSE,

@@ -57,9 +57,6 @@ public class Lexer {
             case ':' -> {
                 return new Lexeme(Types.FUNC_DEFINITION, lineNumber);
             }
-            case '%' -> {
-                return new Lexeme(Types.PERCENTERROR, lineNumber);
-            }
             case '*' -> {
                 return new Lexeme(Types.MULTIPLY, lineNumber);
             }
@@ -107,6 +104,12 @@ public class Lexer {
                     return new Lexeme(Types.PLUS_PLUS, lineNumber);
                 else
                     return new Lexeme(Types.PLUS, lineNumber);
+            }
+            case '%' -> {
+                if (match('%'))
+                    return new Lexeme(Types.MOD, lineNumber);
+                else
+                    return new Lexeme(Types.PERCENTERROR, lineNumber);
             }
             case '-' -> {
                 if (match('-'))

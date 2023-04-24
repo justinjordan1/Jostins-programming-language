@@ -28,7 +28,7 @@ public class NamedValue {
     }
 
     public void setValue(Lexeme newValue) {
-        this.value = value;
+        this.value = newValue;
     }
 
     public String toString() {

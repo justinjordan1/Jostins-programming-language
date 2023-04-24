@@ -14,21 +14,27 @@ public class Environment {
 
     public Environment(Environment parent, ArrayList<NamedValue> entries) {
         this.parent = parent;
-        this.entries = entries;
+        this.entries = new ArrayList<>();
+//
     }
 
-    private Lexeme typeElevate(Lexeme value, Types targetType) {
-        //generated with chatGPT but with pretty heavy modifcation to get it to
-        //do what I actually wanted it to do
+    public Environment(Environment env) {
+        this.entries = env.entries;
+        this.parent = env.parent;
+
+
+    }
+
+    public Lexeme typeElevate(Lexeme value, Types targetType) {
         switch (targetType) {
             case INTERGER:
                 if (value.getType() == Types.DOS) {
-                    return new Lexeme(Types.INTERGER, value.getLineNumber(), (int) value.getDosValue());
+                    return new Lexeme(Types.INTERGER, value.getLineNumber(), (int) Math.round(value.getDosValue()));
                 } else if (value.getType() == Types.GEORGE) {
-                    return new Lexeme(Types.INTERGER, value.getBooleanValue() ? 1 : 0);
+                    return new Lexeme(Types.INTERGER, value.getLineNumber(), value.getBooleanValue() ? 1 : 0);
                 } else if (value.getType() == Types.STRING) {
                     try {
-                        return new Lexeme(Types.INTERGER, value.getLineNumber(), parseInt(value.getStringValue()));
+                        return new Lexeme(Types.INTERGER, value.getLineNumber(), Integer.parseInt(value.getStringValue()));
                     } catch (NumberFormatException e) {
                         throw new RuntimeException("Cannot cast \"" + value.getStringValue() + "\" to inteRger");
                     }
@@ -38,10 +44,10 @@ public class Environment {
                 if (value.getType() == Types.INTERGER) {
                     return new Lexeme(Types.DOS, value.getLineNumber(), (double) value.getIntValue());
                 } else if (value.getType() == Types.GEORGE) {
-                    return new Lexeme(Types.DOS, value.getLineNumber(), value.getBooleanValue() ? 1.0f : 0.0f);
+                    return new Lexeme(Types.DOS, value.getLineNumber(), value.getBooleanValue() ? 1.0 : 0.0);
                 } else if (value.getType() == Types.STRING) {
                     try {
-                        return new Lexeme(Types.DOS, value.getLineNumber(), Float.parseFloat(value.getStringValue()));
+                        return new Lexeme(Types.DOS, value.getLineNumber(), Double.parseDouble(value.getStringValue()));
                     } catch (NumberFormatException e) {
                         throw new RuntimeException("Cannot cast \"" + value.getStringValue() + "\" to float");
                     }
@@ -58,10 +64,10 @@ public class Environment {
                         throw new RuntimeException("Cannot cast " + intValue + " to boolean");
                     }
                 } else if (value.getType() == Types.DOS) {
-                    Double floatValue = value.getDosValue();
-                    if (floatValue == 0.0f) {
+                    double floatValue = value.getDosValue();
+                    if (floatValue == 0.0) {
                         return new Lexeme(Types.GEORGE, value.getLineNumber(), false);
-                    } else if (floatValue == 1.0f) {
+                    } else if (floatValue == 1.0) {
                         return new Lexeme(Types.GEORGE, value.getLineNumber(), true);
                     } else {
                         throw new RuntimeException("Cannot cast " + floatValue + " to boolean");
@@ -72,6 +78,7 @@ public class Environment {
                 break;
         }
         // If the value cannot be elevated to the target type, return null
+        System.out.println("casting error");
         return null;
     }
 
@@ -79,7 +86,24 @@ public class Environment {
         // Ensure this identifier is defined in this or some parent environment lookup (identifier);
         // Search this environment and update if found locally
         for (NamedValue namedValue : entries) {
+            System.out.println((namedValue.getIdentifier().getStringValue().equals(identifier.getStringValue())));
             if (namedValue.getIdentifier().equals(identifier)) {
+
+                Types declaredType = namedValue.getType();
+                Types providedType = newValue.getType();
+                if (providedType != declaredType)
+                    newValue = typeElevate(newValue, declaredType);
+                if (newValue == null)
+                    error("Variable *" + identifier.getStringValue() +
+                                    "' has been declared as type " + declaredType +
+                                    " and cannot be assigned a value of type " + providedType,
+                            identifier.getLineNumber());
+                namedValue.setValue(newValue);
+                // Whether a value of a valid type was provided or not,
+                // quit looking once we find a match.
+                return;
+            } else if (namedValue.getIdentifier().getStringValue().equals(identifier.getStringValue())) {
+                
                 Types declaredType = namedValue.getType();
                 Types providedType = newValue.getType();
                 if (providedType != declaredType)
@@ -96,16 +120,33 @@ public class Environment {
             }
         }
         // If no local match is found, try the update in the parent environment
+
         parent.update(identifier, newValue);
     }
 
+
     public void add(Types type, Lexeme identifier) {
-        add(type, identifier, null);
+//        if (entries == null) {
+//            entries = new ArrayList<>();
+//        }
+        NamedValue namedValue = new NamedValue(type, identifier);
+        entries.add(namedValue);
     }
+
+    public void funcAdd(Lexeme identifier, Lexeme value) {
+//        if (entries == null) {
+//            entries = new ArrayList<>();
+//        }
+
+        NamedValue namedValue = new NamedValue(identifier.getType(), identifier);
+        namedValue.setValue(value);
+        entries.add(namedValue);
+    }
+
 
     public void add(Types type, Lexeme identifier, Lexeme value) {
         if (softLookup(identifier) != null) {
-            error("A variable with the name *" + identifier.getStringValue() +
+            error("A variable with the name " + identifier.getStringValue() +
                             "' is already defined and cannot be re-declared.",
                     identifier.getLineNumber());
         } else {
@@ -116,8 +157,10 @@ public class Environment {
 
     public Lexeme lookup(Lexeme identifier) {
         Lexeme value = softLookup(identifier);
+        //System.out.println(value + "lookupTesting");
         if (value == null) {
             if (parent != null) return parent.lookup(identifier);
+
             else error("'" + identifier.getStringValue() +
                     " is undefined.", identifier.getLineNumber());
         }
@@ -125,9 +168,19 @@ public class Environment {
     }
 
     private Lexeme softLookup(Lexeme identifier) {
+
+
         for (NamedValue namedValue : entries) {
-            if (namedValue.getIdentifier().equals(identifier))
-                return namedValue.getValue();
+            try {
+                if (namedValue.getIdentifier().getStringValue().equals(identifier.getStringValue())) {
+                    return namedValue.getValue();
+                }
+            } catch (Exception e) {
+                if (namedValue.getIdentifier().equals(identifier)) {
+                    return namedValue.getValue();
+                }
+            }
+
         }
         return null;
     }
@@ -135,13 +188,18 @@ public class Environment {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("Environment" + " " + this.hashCode() + ":\n");
-        for (NamedValue namedValue : entries) {
-            sb.append(namedValue.getIdentifier().getStringValue());
-            sb.append(": ");
-            sb.append(namedValue.getType().toString());
-            sb.append(" = ");
-            sb.append(namedValue.getValue().toString());
-            sb.append("\n");
+        System.out.println(entries);
+        if (entries != null) {
+            for (NamedValue namedValue : entries) {
+                sb.append(namedValue.getIdentifier().getStringValue());
+                sb.append(": ");
+                sb.append(namedValue.getType().toString());
+                sb.append(" = ");
+                sb.append(namedValue.getValue().toString());
+                sb.append("\n");
+            }
+        } else {
+            sb.append("Entries is null");
         }
         return sb.toString();
     }

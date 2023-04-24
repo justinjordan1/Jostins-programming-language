@@ -1,5 +1,8 @@
 package src.lexicalAnalysis;
 
+import src.Evaluation.Environment;
+
+import java.io.ObjectStreamException;
 import java.util.ArrayList;
 
 public final class Lexeme {
@@ -11,6 +14,14 @@ public final class Lexeme {
     private Double doubleValue;
     private Boolean booleanValue;
     private String stringValue;
+    private Environment definingEnviorment;
+    private Object[] arrayValue;
+    private ArrayList<Object> arrayListValue;
+    private Object[][] matrixValue;
+
+    public void setEnvironment(Environment env) {
+        definingEnviorment = env;
+    }
 
     public Lexeme(Types type) {
         this.type = type;
@@ -75,6 +86,9 @@ public final class Lexeme {
     }
 
     public double getDosValue() {
+        if (doubleValue == null) {
+            throw new IllegalStateException("doubleValue is not initialized for this Lexeme.");
+        }
         return doubleValue;
     }
 
@@ -110,6 +124,7 @@ public final class Lexeme {
             str += booleanValue;
         } else if (type == Types.STRING) {
             addvalue(str);
+
             str += "\"" + stringValue + "\"";
         }
         return str;
@@ -165,6 +180,74 @@ public final class Lexeme {
         return treeString.toString();
 
     }
+
+    public int getChildrenSize() {
+        return children.size();
+    }
+
+    public ArrayList<Lexeme> getChildren() {
+        return children;
+    }
+
+    public Object getValue() {
+        return switch (type) {
+            case INTERGER -> intValue;
+            case DOS -> doubleValue;
+            case GEORGE -> booleanValue;
+            case STRING -> stringValue;
+            case array -> arrayValue;
+            case linkedList -> arrayValue; // Assuming you're using the same field for linked lists
+            case matrix -> matrixValue; // Assuming you have a field for matrix values
+            default -> throw new IllegalStateException("No value associated with this Lexeme type: " + type);
+        };
+    }
+
+    public Object getNumberValue() {
+        return switch (type) {
+            case INTERGER -> intValue;
+            case DOS -> doubleValue;
+            default -> throw new IllegalStateException("No namber value associated with this Lexeme type: " + type);
+        };
+    }
+
+    public Lexeme(Types type, int lineNumber, ArrayList<Object> value) {
+        this.type = type;
+        this.lineNumber = lineNumber;
+        this.arrayListValue = value;
+    }
+
+    public Lexeme(Types type, int lineNumber, Object[][] value) {
+        this.type = type;
+        this.lineNumber = lineNumber;
+        this.arrayValue = value;
+    }
+
+    public Lexeme(Types type, int lineNumber, Object[] value) {
+        this.type = type;
+        this.lineNumber = lineNumber;
+        this.arrayValue = value;
+    }
+
+
+    public Object[] getArrayValue() {
+        return arrayValue;
+    }
+
+    public void setArrayValue(Object[] arrayValue) {
+        this.arrayValue = arrayValue;
+    }
+
+    public void setArrayListValue(ArrayList<Object> arrayListValue) {
+        this.arrayListValue = arrayListValue;
+    }
+
+    public void setMatrixValue(Object[][] matrixValue) {
+        this.matrixValue = matrixValue;
+    }
+
+    public Object[][] getMatrixValue() {
+        return matrixValue;
+    }
+
+
 }
-
-

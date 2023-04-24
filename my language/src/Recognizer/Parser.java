@@ -5,6 +5,7 @@ import src.lexicalAnalysis.Lexeme;
 import src.lexicalAnalysis.Types;
 
 import java.util.ArrayList;
+import java.util.Collection;
 
 import static src.lexicalAnalysis.Types.*;
 import static src.lexicalAnalysis.Types.whileTrue;
@@ -71,7 +72,7 @@ public class Parser {
             Lexeme statement = statement();
             statementList.AddChild(statement);
         }
-        //System.out.println(statementList.children);
+        //(statementList.children);
         return statementList;
     }
 
@@ -95,23 +96,28 @@ public class Parser {
 
     private Lexeme statement() {
 
+
         if (check(VAR)) {
 
-            varInitialization();
+            return varInitialization();
 
         } else if (check(IDENTIFIER)) {
-            Lexeme identifier = consume(IDENTIFIER);
-            if (checkNext(ASSIGNMENT)) {
 
+            Lexeme identifier = consume(IDENTIFIER);
+
+            if (check(ASSIGNMENT)) {
+                System.out.println("Assignment");
                 Lexeme assign = consume(ASSIGNMENT);
                 Lexeme expression = expression();
+                consume(SEMI_COLON);
                 Lexeme varAsssignment = new Lexeme(varAssignment);
                 varAsssignment.AddChild(identifier);
                 varAsssignment.AddChild(assign);
                 varAsssignment.AddChild(expression);
                 return varAsssignment;
-            } else if (functionCallPending()) {
-                return functionCall();
+            } else if (check(OPAREN)) {
+
+                return functionCall(identifier);
             } else if (checkNext(OBRACKET)) {
 
                 consume(OBRACKET);
@@ -121,11 +127,12 @@ public class Parser {
                 arrayAssi.AddChild(identifier);
                 arrayAssi.AddChild(number);
                 return arrayAssi;
-            } else if (checkNext(OARRAYLIST)) {
+            } else if (check(OARRAYLIST)) {
 
                 consume(OARRAYLIST);
                 Lexeme arrayListAssi = new Lexeme(listAssi);
                 if (numberPending()) {
+
                     Lexeme number = number();
                     consume(CARRAYLIST);
                     Lexeme assignment = consume(ASSIGNMENT);
@@ -172,6 +179,7 @@ public class Parser {
 
                 }
             } else if (check(OMATRIX)) {
+
                 Lexeme inlineMatrixAssi = new Lexeme(MatrixAssi);
                 consume(OMATRIX);
                 Lexeme number = number();
@@ -189,10 +197,14 @@ public class Parser {
                 inlineMatrixAssi.addChildren(numberList);
                 inlineMatrixAssi.AddChild(assignment);
                 inlineMatrixAssi.AddChild(expression);
+                return inlineMatrixAssi;
+            } else if (check(FUNC_DEFINITION)) {
 
-            } else if (checkNext(FUNC_DEFINITION)) {
-                return functionDefinition();
+                return functionDefinition(identifier);
             } else {
+                if (expressionPending()) {
+                    return expression();
+                }
 
                 return error("malformed array assignment");
                 //advance();
@@ -247,6 +259,11 @@ public class Parser {
             return collectionInitialization();
         } else if (check(GET)) {
             return collectionGetter();
+        } else if (expressionPending()) {
+
+            Lexeme theExpression = expression();
+            consume(SEMI_COLON);
+            return theExpression;
 
         } else {
             advance();
@@ -313,6 +330,7 @@ public class Parser {
     }
 
     private Lexeme varInitialization() {
+
         Lexeme var = consume(VAR);
         Lexeme identList = varIdentifierList();
         Lexeme type = dataType();
@@ -330,6 +348,7 @@ public class Parser {
     }
 
     private Lexeme varIdentifierList() {
+
         Lexeme identifier = consume(IDENTIFIER);
         ArrayList<Lexeme> varList = new ArrayList<>();
         varList.add(identifier);
@@ -340,11 +359,15 @@ public class Parser {
         }
         Lexeme varIdentList = new Lexeme(varIdentifierList);
         varIdentList.addChildren(varList);
+
+
         return varIdentList;
+
     }
 
-    private Lexeme functionDefinition() {
-        Lexeme identifier = consume(IDENTIFIER);
+    private Lexeme functionDefinition(Lexeme identifier) {
+
+        //Lexeme identifier = consume(IDENTIFIER);
         Lexeme funcDef = consume(FUNC_DEFINITION);
         Lexeme type = dataType();
         consume(OPAREN);
@@ -392,7 +415,7 @@ public class Parser {
         consume(OPAREN);
 
         Lexeme varInt = varInitialization();
-        //System.out.println("hi");
+        //("hi");
         Lexeme expression = expression();
 
         consume(CPAREN);
@@ -401,7 +424,7 @@ public class Parser {
         forLoopBody.AddChild(varInt);
         forLoopBody.AddChild(expression);
 
-        //System.out.println(currentLexeme);
+        //(currentLexeme);
         if (check(LOOPINCREMENTPLUS)) {
             Lexeme loopincplus = consume(LOOPINCREMENTPLUS);
             forLoopBody.AddChild(loopincplus);
@@ -417,7 +440,7 @@ public class Parser {
 
         Lexeme block = block();
         forLoopBody.AddChild(block);
-        //System.out.println(forLoopBody.children);
+        //(forLoopBody.children);
         return forLoopBody;
     }
 
@@ -519,14 +542,20 @@ public class Parser {
         return returnStatement;
     }
 
+    private boolean expressionPending() {
+        return (binaryExpressionPending() || unaryExpressionPending() || parenthesizedExpressionPending());
+    }
+
     private Lexeme expression() {
-        //System.out.println("awdsfkj");
+
         if (binaryExpressionPending()) {
             return binaryExpression();
         } else if (unaryExpressionPending()) {
             return unaryExpression();
         } else if (parenthesizedExpressionPending()) {
             return parenthesizedExpression();
+        } else if (primaryPending()) {
+            return primary();
         } else {
             return error("Expected an expression");
         }
@@ -535,6 +564,7 @@ public class Parser {
 
 
     private boolean binaryExpressionPending() {
+
         return primaryPending() || binaryOperatorPending() || primaryPending();
     }
 
@@ -578,17 +608,20 @@ public class Parser {
                 Lexeme identifier = consume(IDENTIFIER);
                 unaryExpres.AddChild(minusunary);
                 unaryExpres.AddChild(identifier);
+                break;
 
             case NOT:
                 Lexeme not = consume(NOT);
                 Lexeme identifier2 = consume(IDENTIFIER);
                 unaryExpres.AddChild(not);
                 unaryExpres.AddChild(identifier2);
+                break;
             case INVERSE:
                 Lexeme inverse = consume(INVERSE);
                 Lexeme identifier3 = consume(IDENTIFIER);
                 unaryExpres.AddChild(inverse);
                 unaryExpres.AddChild(identifier3);
+                break;
             case IDENTIFIER:
                 if (peekNext() == PLUS_PLUS || peekNext() == MINUS_MINUS) {
                     Lexeme identifier4 = consume(IDENTIFIER);
@@ -601,6 +634,7 @@ public class Parser {
                         unaryExpres.AddChild(minusTwo);
                     }
                 }
+                break;
             default:
                 Lexeme primary = primary();
                 unaryExpres.AddChild(primary);
@@ -611,16 +645,16 @@ public class Parser {
 
     private boolean binaryOperatorPending() {
         return switch (currentLexeme.getType()) {
-            case PLUS, MINUS, MULTIPLY, DIVIDE, EXPONENTIATE, AND, OR, GREATER, GREATER_EQ, LESS, LESS_EQ, EQUALS, NOT_EQUAL, DOT_PRODUCT -> true;
+            case PLUS, MINUS, MULTIPLY, DIVIDE, EXPONENTIATE, AND, OR, GREATER, GREATER_EQ, LESS, LESS_EQ, EQUALS, NOT_EQUAL, DOT_PRODUCT, MOD -> true;
             default -> false;
         };
     }
 
     private Lexeme binaryOperator() {
-        //System.out.println("doesBinaryOperatorGetCalled");
+
         Lexeme binaryOperator;
         switch (currentLexeme.getType()) {
-            case PLUS, MINUS, MULTIPLY, DIVIDE, EXPONENTIATE, AND, OR, GREATER, GREATER_EQ, LESS, LESS_EQ, EQUALS, NOT_EQUAL, DOT_PRODUCT -> binaryOperator = currentLexeme;
+            case PLUS, MINUS, MULTIPLY, DIVIDE, EXPONENTIATE, AND, OR, GREATER, GREATER_EQ, LESS, LESS_EQ, EQUALS, NOT_EQUAL, DOT_PRODUCT, MOD -> binaryOperator = currentLexeme;
             default -> {
                 return error("Expecting Binary Operator");
                 //binaryOperator = new Lexeme(empty);
@@ -650,19 +684,30 @@ public class Parser {
 
 
     private boolean functionCallPending() {
-        return checkNext(OPAREN);
+        return check(OPAREN);
     }
 
-    private Lexeme functionCall() {
+    private Lexeme functionCall(Lexeme identifier) {
+
         Lexeme functionCall = new Lexeme(funcCall);
-        Lexeme identifier = consume(IDENTIFIER);
         consume(OPAREN);
         Lexeme expressionList = expressionList();
         consume(CPAREN);
         functionCall.AddChild(identifier);
         functionCall.AddChild(expressionList);
         return functionCall;
+    }
 
+    private Lexeme functionCall() {
+
+        Lexeme functionCall = new Lexeme(funcCall);
+        consume(OPAREN);
+        Lexeme identifier = consume(IDENTIFIER);
+        Lexeme expressionList = expressionList();
+        consume(CPAREN);
+        functionCall.AddChild(identifier);
+        functionCall.AddChild(expressionList);
+        return functionCall;
     }
 
 
@@ -708,8 +753,9 @@ public class Parser {
 
     private Lexeme collectionInitialization() {
         Lexeme collectionInitialization = new Lexeme(Types.collectionInitialization);
-        Lexeme collection = consume(COLLECTION);
+        Lexeme collectionKeyWord = consume(COLLECTION);
         Lexeme identifier = consume(IDENTIFIER);
+        Lexeme collection = new Lexeme(whatCollectionType());
         Lexeme dataType = dataType();
         Lexeme collectionDefinition = collectionHelper();
         collectionInitialization.AddChild(collection);
@@ -718,6 +764,21 @@ public class Parser {
         collectionInitialization.AddChild(collectionDefinition);
         consume(SEMI_COLON);
         return collectionInitialization;
+    }
+
+    private Types whatCollectionType() {
+        System.out.println(currentLexeme);
+        if (checkNext(OBRACKET)) {
+            return array;
+        } else if (checkNext(OARRAYLIST)) {
+            return linkedList;
+        } else if (checkNext(OMATRIX)) {
+            return matrix;
+        } else {
+            throw new RuntimeException("no valid collectionTypes");
+        }
+
+
     }
 
     private Lexeme collectionHelper() {
@@ -781,6 +842,7 @@ public class Parser {
 
 
     private boolean primaryPending() {
+
         return numberPending() || check(STRING) || check(IDENTIFIER) || booleanLiteralPending()
                 || functionCallPending() || collectionPending() || check(CHAR) || parenthesizedExpressionPending();
     }
@@ -828,8 +890,11 @@ public class Parser {
 
     private Lexeme ifConditional() {
         Lexeme ifKeyWord = consume(IF);
+
         consume(OPAREN);
+
         Lexeme expression = expression();
+
         consume(CPAREN);
         Lexeme block = block();
         ifKeyWord.AddChild(expression);
@@ -912,17 +977,11 @@ public class Parser {
         return matrix;
     }
 
+
     private Lexeme error(String message) {
         C10H15N.syntaxError(message, currentLexeme);
         return new Lexeme(ERROR, currentLexeme.getLineNumber(), message);
     }
 
-    private static void log(String message) {
-        if (printDebugMessages) System.out.println(message);
-    }
 
-    private static void logHeading(String heading) {
-        if (printDebugMessages)
-            System.out.println("--------" + "heading" + "--------");
-    }
 }
