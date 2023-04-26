@@ -112,7 +112,7 @@ public final class Lexeme {
     //return this.isEqua}
 
     public String toString() {
-        String str = type + " Line: " + lineNumber + " ";
+        String str = type + " Line: " + lineNumber + " value: ";
         if (type == Types.INTERGER) {
             addvalue(str);
             str += intValue;
@@ -197,7 +197,8 @@ public final class Lexeme {
             case STRING -> stringValue;
             case array -> arrayValue;
             case linkedList -> arrayValue; // Assuming you're using the same field for linked lists
-            case matrix -> matrixValue; // Assuming you have a field for matrix values
+            case matrix -> matrixValue;
+            // Assuming you have a field for matrix values
             default -> throw new IllegalStateException("No value associated with this Lexeme type: " + type);
         };
     }
@@ -219,7 +220,7 @@ public final class Lexeme {
     public Lexeme(Types type, int lineNumber, Object[][] value) {
         this.type = type;
         this.lineNumber = lineNumber;
-        this.arrayValue = value;
+        this.matrixValue = value;
     }
 
     public Lexeme(Types type, int lineNumber, Object[] value) {

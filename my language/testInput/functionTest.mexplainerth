@@ -1,0 +1,13 @@
+square : dos(interger x) {
+    var myVar dos = x î 2;
+
+}
+square(3);
+
+fourthPower : dos(interger x) {
+    var value interger = 1.1
+    square : dos(interger x) {
+
+    }
+
+}

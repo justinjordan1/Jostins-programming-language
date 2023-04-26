@@ -86,7 +86,6 @@ public class Environment {
         // Ensure this identifier is defined in this or some parent environment lookup (identifier);
         // Search this environment and update if found locally
         for (NamedValue namedValue : entries) {
-            System.out.println((namedValue.getIdentifier().getStringValue().equals(identifier.getStringValue())));
             if (namedValue.getIdentifier().equals(identifier)) {
 
                 Types declaredType = namedValue.getType();
@@ -103,7 +102,7 @@ public class Environment {
                 // quit looking once we find a match.
                 return;
             } else if (namedValue.getIdentifier().getStringValue().equals(identifier.getStringValue())) {
-                
+
                 Types declaredType = namedValue.getType();
                 Types providedType = newValue.getType();
                 if (providedType != declaredType)
@@ -188,7 +187,6 @@ public class Environment {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("Environment" + " " + this.hashCode() + ":\n");
-        System.out.println(entries);
         if (entries != null) {
             for (NamedValue namedValue : entries) {
                 sb.append(namedValue.getIdentifier().getStringValue());

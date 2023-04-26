@@ -1,0 +1,8 @@
+var myVar interger = 2 + 2;
+
+myVar = 4;
+
+var oTherVar interger = 2 î myVar;
+
+
+

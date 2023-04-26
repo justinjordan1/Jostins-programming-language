@@ -1,0 +1,4 @@
+var myVar interger = 1;
+for (var i interger = 0; i < 10)¬+ {
+    myVar = i;
+}

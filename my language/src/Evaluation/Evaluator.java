@@ -7,9 +7,12 @@ import src.lexicalAnalysis.Lexer;
 import src.Evaluation.Environment;
 import src.lexicalAnalysis.Types;
 
+import java.io.*;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Optional;
 
 import static src.lexicalAnalysis.Types.*;
 
@@ -18,21 +21,24 @@ public class Evaluator<Parsing> {
     public Environment environment;
     public Lexeme Result;
 
+
     public Lexeme eval(Lexeme programParseTree, Environment environment) {
         this.environment = environment;
 
         Result = evaluateProgram(programParseTree, environment);
         return Result;
+
     }
 
     public Lexeme evaluateProgram(Lexeme programParseTree, Environment env) {
         Lexeme statementList = programParseTree;
 
+
         for (int i = 0; i < statementList.getChildrenSize(); i++) {
             Lexeme statement = statementList.getChild(i);
             evaluateStatement(statement, env);
         }
-
+        System.out.println(env);
         return statementList; // You may return a more meaningful value if required.
     }
 
@@ -48,6 +54,8 @@ public class Evaluator<Parsing> {
                 return evaluateInitialization(statement, env);
             case binaryExpression:
                 return evalBinaryExpression(statement, env);
+            case unaryExpression:
+                return evalUnaryExpression(statement, env);
             case INTERGER, GEORGE, STRING, DOS:
                 return statement;
 
@@ -72,7 +80,8 @@ public class Evaluator<Parsing> {
                 return evaluateCollectionInitialization(statement, env);
             case MatrixAssi:
                 return evaluateMatrixAssignment(statement, env);
-
+            case IDENTIFIER:
+                return statement;
 
 //
 
@@ -93,7 +102,9 @@ public class Evaluator<Parsing> {
         if (evaluatedExpression.getType() == primary) {
             evaluatedExpression = evalPrimary(evaluatedExpression, environment);
         }
-
+        if (evaluatedExpression.getType() == IDENTIFIER) {
+            evaluatedExpression = environment.lookup(evaluatedExpression);
+        }
 
         for (int i = 0; i < identList.getChildrenSize(); i++) {
             Lexeme identifier = identList.getChild(i);
@@ -128,6 +139,9 @@ public class Evaluator<Parsing> {
         if (isUnaryOperator(unaryExpression.getChild(0))) {
             operator = unaryExpression.getChild(0);
             operand = eval(unaryExpression.getChild(1), env);
+            while (operand.getChildrenSize() > 0) {
+                operand = operand.getChild(0);
+            }
         } else {
             operand = eval(unaryExpression.getChild(0), env);
         }
@@ -135,7 +149,9 @@ public class Evaluator<Parsing> {
         if (operator != null) {
             switch (operator.getType()) {
                 case MINUS_UNARY:
-                    return new Lexeme(Types.INTERGER, operand.getLineNumber(), -operand.getIntValue());
+                case MINUS:
+                    Types operandType = operand.getType();
+                    return new Lexeme(operandType, operand.getLineNumber(), -operand.getIntValue());
                 case NOT:
                     return new Lexeme(Types.GEORGE, operand.getLineNumber(), !operand.getBooleanValue());
                 case INVERSE:
@@ -161,12 +177,13 @@ public class Evaluator<Parsing> {
 
     private boolean isUnaryOperator(Lexeme lexeme) {
         return switch (lexeme.getType()) {
-            case MINUS_UNARY, NOT, INVERSE, PLUS_PLUS, MINUS_MINUS -> true;
+            case MINUS_UNARY, NOT, INVERSE, PLUS_PLUS, MINUS_MINUS, MINUS -> true;
             default -> false;
         };
     }
 
     private Lexeme evalBinaryExpression(Lexeme binaryExpression, Environment env) {
+
         if (binaryExpression.getChildrenSize() == 1) {
             return eval(binaryExpression.getChild(0), env);
         }
@@ -214,6 +231,40 @@ public class Evaluator<Parsing> {
                     result = new Lexeme(Types.DOS, leftOperand.getLineNumber(), leftOperand.getDosValue() - rightOperand.getDosValue());
                 } else {
                     throw new RuntimeException("Unsupported types for PLUS operation: " + leftOperand.getType() + ", " + rightOperand.getType());
+                }
+                break;
+            case MULTIPLY:
+                System.out.println("multiplication");
+                if (leftOperand.getType() == Types.INTERGER && rightOperand.getType() == Types.INTERGER) {
+                    result = new Lexeme(Types.INTERGER, leftOperand.getLineNumber(), leftOperand.getIntValue() * rightOperand.getIntValue());
+                } else if (leftOperand.getType() == Types.INTERGER && rightOperand.getType() == Types.DOS) {
+                    result = new Lexeme(Types.DOS, leftOperand.getLineNumber(), leftOperand.getIntValue() * rightOperand.getDosValue());
+                } else if (leftOperand.getType() == Types.DOS && rightOperand.getType() == Types.INTERGER) {
+                    result = new Lexeme(Types.DOS, leftOperand.getLineNumber(), leftOperand.getDosValue() * rightOperand.getIntValue());
+                } else if (leftOperand.getType() == Types.DOS && rightOperand.getType() == Types.DOS) {
+                    result = new Lexeme(Types.DOS, leftOperand.getLineNumber(), leftOperand.getDosValue() * rightOperand.getDosValue());
+                } else if (leftOperand.getType() == matrix && rightOperand.getType() == matrix) {
+                    System.out.println("matrix multiplication ");
+                    Object[][] leftMatrix = leftOperand.getMatrixValue();
+                    Object[][] rightMatrix = rightOperand.getMatrixValue();
+                    result = new Lexeme(Types.MATRIX, leftOperand.getLineNumber(), matrixMultiplication(leftMatrix, rightMatrix));
+
+                } else {
+                    throw new RuntimeException("Unsupported types for MULTIPLY operation: " + leftOperand.getType() + ", " + rightOperand.getType());
+                }
+                break;
+            case DOT_PRODUCT:
+
+                if (leftOperand.getType() == matrix && rightOperand.getType() == matrix) {
+
+
+                    System.out.println(Arrays.deepToString(leftOperand.getMatrixValue()));
+                    System.out.println(Arrays.deepToString(rightOperand.getMatrixValue()));
+                    Object[][] leftMatrix = leftOperand.getMatrixValue();
+                    Object[][] rightMatrix = rightOperand.getMatrixValue();
+
+
+                    result = new Lexeme(Types.MATRIX, leftOperand.getLineNumber(), matrixDotProduct(leftMatrix, rightMatrix));
                 }
                 break;
             case DIVIDE:
@@ -348,11 +399,87 @@ public class Evaluator<Parsing> {
         return result;
     }
 
+    private Object[][] matrixDotProduct(Object[][] leftMatrix, Object[][] rightMatrix) {
+        System.out.println("DOT PRODUCT ATTEMPTED");
+
+        int rowsLeft = leftMatrix.length;
+        int colsLeft = leftMatrix[0].length;
+        int rowsRight = rightMatrix.length;
+        int colsRight = rightMatrix[0].length;
+
+        if (colsLeft != rowsRight) {
+            System.out.println("incompatable sizes");
+            return null;
+        }
+        System.out.println("not incompatable sizes");
+        Object[][] resultMatrix = new Object[rowsLeft][colsRight];
+
+        System.out.println("resultMatrix created");
+        for (int i = 0; i < rowsLeft; i++) {
+            System.out.println("OuterLoop");
+            for (int j = 0; j < colsRight; j++) {
+                System.out.println("InnerLoop");
+                double sum = 0;
+                for (int k = 0; k < colsLeft; k++) {
+                    System.out.println("INNER INNER LOOP");
+                    System.out.println(leftMatrix[i][k]);
+                    System.out.println(rightMatrix[k][j]);
+                    Lexeme leftMatrixValue = (Lexeme) leftMatrix[i][k];
+                    Lexeme rightMatrixValue = (Lexeme) rightMatrix[i][k];
+                    System.out.println(leftMatrixValue.getIntValue());
+                    System.out.println(rightMatrixValue.getIntValue());
+                    sum += leftMatrixValue.getIntValue() * rightMatrixValue.getIntValue();
+
+                }
+                resultMatrix[i][j] = sum;
+            }
+        }
+        System.out.println(Arrays.deepToString(resultMatrix));
+        return resultMatrix;
+
+    }
+
+
+    private Object[][] matrixMultiplication(Object[][] leftMatrix, Object[][] rightMatrix) {
+
+        int leftRows = leftMatrix.length;
+        int leftColumns = leftMatrix[0].length;
+        int rightRows = rightMatrix.length;
+        int rightColumns = rightMatrix[0].length;
+
+        if (leftColumns != rightRows) {
+            throw new RuntimeException("Matrix dimensions do not match for multiplication: " +
+                    leftRows + "x" + leftColumns + " and " + rightRows + "x" + rightColumns);
+        }
+
+        Object[][] resultMatrix = new Object[leftRows][rightColumns];
+
+        for (int i = 0; i < leftRows; i++) {
+            for (int j = 0; j < rightColumns; j++) {
+                resultMatrix[i][j] = 0;
+
+                for (int k = 0; k < leftColumns; k++) {
+
+                    Lexeme leftMatrixValue = (Lexeme) leftMatrix[i][k];
+                    Lexeme rightMatrixValue = (Lexeme) rightMatrix[i][k];
+
+                    int left = leftMatrixValue.getIntValue();
+                    int right = rightMatrixValue.getIntValue();
+
+                    resultMatrix[i][j] = (Integer) resultMatrix[i][j] + left * right;
+                }
+            }
+        }
+        System.out.println(Arrays.deepToString(resultMatrix));
+        return resultMatrix;
+    }
+
+
     private Lexeme evalPrimary(Lexeme primary, Environment env) {
 
         if (primary == null) return null;
         Lexeme innerNode = primary.getChild(0);
-        if (innerNode.getType() == Types.INTERGER) {
+        if (innerNode.getType() == Types.INTERGER || innerNode.getType() == DOS || innerNode.getType() == matrix) {
             return innerNode;
         } else {
             return eval(innerNode, env);
@@ -368,12 +495,15 @@ public class Evaluator<Parsing> {
     public Lexeme evalVarAssignment(Lexeme varAssignment, Environment environment) {
         // Assuming the structure of the varAssignment Lexeme is: [IDENTIFIER, ASSIGNMENT, EXPRESSION]
         Lexeme identifier = varAssignment.getChild(0);
-        System.out.println(identifier.getStringValue());
+
         Lexeme expression = varAssignment.getChild(2);
 
         Lexeme evaluatedExpression = eval(expression, environment);
         while (evaluatedExpression.getChildrenSize() > 0) {
             evaluatedExpression = evaluatedExpression.getChild(0);
+        }
+        if (evaluatedExpression.getType() == IDENTIFIER) {
+            evaluatedExpression = environment.lookup(evaluatedExpression);
         }
 
 
@@ -385,7 +515,7 @@ public class Evaluator<Parsing> {
             throw new RuntimeException("Variable not found: " + identifier.getStringValue());
         }
 
-        System.out.println(environment);
+
         return evaluatedExpression;
     }
 
@@ -405,8 +535,7 @@ public class Evaluator<Parsing> {
         Lexeme functionName = functionCall.getChild(0);// Assuming the first child is the function name
 
         Lexeme funcDefTree = env.lookup(functionName);
-        funcDefTree.printAsParseTree();
-        functionCall.printAsParseTree();
+
 
         Lexeme paramList = funcDefTree.getChild(3);
         Lexeme argList = functionCall.getChild(1);
@@ -425,13 +554,13 @@ public class Evaluator<Parsing> {
         for (int i = 0; i < paramList.getChildrenSize(); i++) {
 
             Lexeme param = paramList.getChild(i);
-            param.printAsParseTree();
-            argList.getChild(i).printAsParseTree();
+
+
             callEnv.funcAdd(param.getChild(1), evaluatedArgList.getChild(i));
 
 
         }
-
+        System.out.println("HERE IS THE CALL ENV" + callEnv);
         Lexeme funcBody = funcDefTree.getChild(4);
         Lexeme result = eval(funcBody, callEnv);
 
@@ -440,7 +569,7 @@ public class Evaluator<Parsing> {
             return evaluateReturnStatement(result, callEnv);
         } else {
             // If there's no return statement, return null
-            return null;
+            return result;
         }
 
     }
@@ -452,10 +581,10 @@ public class Evaluator<Parsing> {
             Lexeme arg = argList.getChild(i);
             Lexeme evaluatedArg = eval(arg, env);
             while (evaluatedArg.getChildrenSize() > 0) {
-                System.out.println("hi");
+
                 evaluatedArg = evaluatedArg.getChild(0);
             }
-            evaluatedArg.printAsParseTree();
+
             evaluatedArgList.AddChild(evaluatedArg);
         }
         return evaluatedArgList;
@@ -495,7 +624,7 @@ public class Evaluator<Parsing> {
                 result = evaluateBlock(conditional.getChild(ifElseChildIndex), env);
             }
         }
-        System.out.println(env);
+
         return result;
 
     }
@@ -514,9 +643,9 @@ public class Evaluator<Parsing> {
         evaluateInitialization(forLoop.getChild(1), loopEnv);
         Lexeme incrementDirection = forLoop.getChild(3);
         while (evaluateStatement(forLoop.getChild(2), loopEnv).getBooleanValue()) {
-            System.out.println("areWeInHere");
+
             Lexeme forblock = forLoop.getChild(4);
-            forblock.printAsParseTree();
+
             Lexeme result = evaluateBlock(forblock, loopEnv);
 
             if (result != null && result.getType() == Types.BREAK) {
@@ -524,7 +653,7 @@ public class Evaluator<Parsing> {
             }
 
             Lexeme loopVariable = forLoop.getChild(1).getChild(1).getChild(0);
-            System.out.println("loop-variable equals" + loopVariable);
+
             Lexeme currentValue = loopEnv.lookup(loopVariable);
 
             if (incrementDirection.getType() == Types.LOOPINCREMENTPLUS) {
@@ -536,7 +665,7 @@ public class Evaluator<Parsing> {
             }
         }
 
-        System.out.println(loopEnv);
+
         return null;
     }
 
@@ -649,6 +778,7 @@ public class Evaluator<Parsing> {
     }
 
     private Lexeme evaluateMatrix(Lexeme matrixNode, Environment env) {
+
         int numRows = matrixNode.children.size();
         int numColumns = matrixNode.getChild(0).children.size();
         Object[][] matrix = new Object[numRows][numColumns];
@@ -657,15 +787,24 @@ public class Evaluator<Parsing> {
             Lexeme rowNode = matrixNode.getChild(i);
             for (int j = 0; j < numColumns; j++) {
                 Lexeme expression = rowNode.getChild(j);
+                if (matrixNode.getType() == expressionList || matrixNode.getChildrenSize() == 1) {
+
+                }
                 Lexeme value = evaluateExpression(expression, env);
-                matrix[i][j] = value.getValue();
+
+
+                matrix[i][j] = value.getChild(0);
             }
         }
-
-        return new Lexeme(Types.matrix, matrixNode.getLineNumber(), matrix);
+        try {
+            return new Lexeme(Types.matrix, matrixNode.getLineNumber(), matrix);
+        } catch (Exception e) {
+            return new Lexeme(Types.matrix, 0, matrix);
+        }
     }
 
     private Lexeme evaluateCollectionInitialization(Lexeme collectionInitialization, Environment env) {
+
         Lexeme collectionType = collectionInitialization.getChild(0);
         Lexeme identifier = collectionInitialization.getChild(1);
         Lexeme dataType = collectionInitialization.getChild(2);
@@ -678,10 +817,8 @@ public class Evaluator<Parsing> {
             default -> throw new RuntimeException("Unsupported collection type: " + collectionType.getType());
 
         }
-        if (collectionType.getType() == matrix) {
-            System.out.println(Arrays.deepToString(env.lookup(identifier).getMatrixValue()));
-        }
-        System.out.println(env);
+
+
         return null;
     }
 
@@ -691,10 +828,12 @@ public class Evaluator<Parsing> {
             ArrayList<Object> array = new ArrayList<>(Collections.nCopies(size, null));
             env.add(Types.array, identifier, new Lexeme(Types.array, identifier.getLineNumber(), array));
         } else {
-            Lexeme assignment = arrayHelper.getChild(0);
+
+//            Lexeme assignment = arrayHelper.getChild(0);
             Lexeme expression = arrayHelper.getChild(1);
             Object value = evaluateExpression(expression, env);
             env.add(Types.array, identifier, new Lexeme(Types.array, identifier.getLineNumber(), (Object[]) value));
+
         }
     }
 
@@ -711,28 +850,75 @@ public class Evaluator<Parsing> {
     }
 
     private void evaluateMatrixHelper(Lexeme matrixHelper, Lexeme identifier, Lexeme dataType, Environment env) {
+
         Lexeme assignment = matrixHelper.getChild(0);
         if (matrixHelper.getChildrenSize() == 4) {
-            System.out.println("evaluatingMatrixHelper");
+
             int numColumns = matrixHelper.getChild(1).getIntValue();
             Lexeme matrixSize = matrixHelper.getChild(2);
             int numRows = matrixHelper.getChild(3).getIntValue();
 
-            Object[][] matrix = new Object[numRows][numColumns];
+            Object[][] matrixToADD = new Object[numRows][numColumns];
             for (int i = 0; i < numRows; i++) {
                 for (int j = 0; j < numColumns; j++) {
 
-                    matrix[i][j] = null;
+                    matrixToADD[i][j] = null;
+                }
+            }
+            env.add(Types.matrix, identifier, new Lexeme(Types.matrix, identifier.getLineNumber(), matrixToADD));
+
+
+        } else {
+
+
+            if (matrixHelper.getType() == binaryExpression) {
+
+                evalBinaryExpression(matrixHelper, env);
+                return;
+            }
+            try {
+                if (matrixHelper.getChild(0).getType() == binaryExpression && matrixHelper.getChild(0).getChildrenSize() > 1) {
+
+                    evalBinaryExpression(matrixHelper.getChild(0), env);
+                    return;
+                }
+            } catch (Exception e) {
+
+            }
+            Lexeme matrix = matrixHelper.getChild(0).getChild(0);
+            int numRows = 0;
+            try {
+                numRows = matrix.getChild(0).getChildrenSize();
+            } catch (Exception e) {
+
+            }
+            Object[][] value = new Object[matrix.getChildrenSize()][numRows];
+            for (int i = 0; i < matrix.getChildrenSize(); i++) {
+                Lexeme expressionList = matrix.getChild(i);
+                for (int j = 0; j < expressionList.getChildrenSize(); j++) {
+                    Lexeme LexedValue = eval(expressionList.getChild(j), env);
+                    Number NumberValue = null;
+                    try {
+                        while (matrix.getChild(i).getChild(j).getChildrenSize() == 1) {
+                            LexedValue = LexedValue.getChild(0);
+                        }
+                        NumberValue = (Number) LexedValue.getNumberValue();
+                        value[i][j] = NumberValue;
+                    } catch (Exception idkhow) {
+                        value[i][j] = LexedValue;
+                    }
+
                 }
             }
 
-            env.add(Types.matrix, identifier, new Lexeme(Types.matrix, identifier.getLineNumber(), matrix));
-        } else {
-            Lexeme expression = matrixHelper.getChild(1);
-            Object value = evaluateExpression(expression, env);
+
             env.add(Types.matrix, identifier, new Lexeme(Types.matrix, identifier.getLineNumber(), (Object[][]) value));
+
         }
+
+
     }
+
 
     private void evaluateArrayAssignment(Lexeme arrayAssignment, Environment env) {
         Lexeme identifier = arrayAssignment.getChild(0);
@@ -760,17 +946,45 @@ public class Evaluator<Parsing> {
     }
 
     private Lexeme evaluateMatrixAssignment(Lexeme matrixAssignment, Environment env) {
+        matrixAssignment.printAsParseTree();
         Lexeme identifier = matrixAssignment.getChild(0);
         Object[][] editableMatrix = env.lookup(identifier).getMatrixValue();
+
+
+        Lexeme step1;
         try {
-            editableMatrix[matrixAssignment.getChild(1).getIntValue()][matrixAssignment.getChild(2).getIntValue()] = eval(matrixAssignment.getChild(6), env);
-        } catch (Exception d) {
-            throw new RuntimeException("index out of bounds for the matrix dawg");
+            System.out.println("testing.....");
+            step1 = eval(matrixAssignment.getChild(4), env);
+
+            while (step1.getChildrenSize() > 0) {
+
+                step1 = step1.getChild(0);
+            }
+            System.out.println(step1);
+        } catch (Exception ImABadProgrammer) {
+            step1 = evalBinaryExpression(matrixAssignment.getChild(4), env);
+            System.out.println("exception ");
+            try {
+                while (step1.getChildrenSize() > 0) {
+
+                    step1 = step1.getChild(0);
+                }
+            } catch (Exception e) {
+                System.out.println("how the heck");
+            }
+            System.out.println(step1);
+
         }
 
+
+        editableMatrix[matrixAssignment.getChild(1).getIntValue()][matrixAssignment.getChild(2).getIntValue()] = step1;
+
+
         env.lookup(identifier).setMatrixValue(editableMatrix);
-        System.out.println(Arrays.deepToString(env.lookup(identifier).getMatrixValue()));
+
+
         return new Lexeme(Types.matrix, identifier.getLineNumber(), editableMatrix);
+
     }
 
 //

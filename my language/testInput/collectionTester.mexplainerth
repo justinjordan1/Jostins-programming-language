@@ -1,0 +1,9 @@
+collection oneEightyrotationMatrix interger[[]] = 2`2;
+oneEightyrotationMatrix[[0,0]] = 0;
+oneEightyrotationMatrix[[0,1]] = 1-2;
+oneEightyrotationMatrix[[1,0]] = 1;
+oneEightyrotationMatrix[[1,1]] = 0;
+
+collection point interger[[]] = [[1]\[1]];
+
+collection rotatedPoint interger[[]] = point * oneEightyrotationMatrix;

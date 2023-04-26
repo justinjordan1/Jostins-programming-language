@@ -53,9 +53,10 @@ public class C10H15N {
         Environment globalEnvironment = new Environment(null, new ArrayList<>());
 
         //Evaluation
-        programParseTree.printAsParseTree();
+//        programParseTree.printAsParseTree();
         Evaluator evaluator = new Evaluator();
         Lexeme programResult = evaluator.eval(programParseTree, globalEnvironment);
+
         printErrors();
         System.out.println("Program result: " + programResult);
 
