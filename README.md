@@ -1,6 +1,6 @@
-# Welcome to the src.C10H15N language!
+# Welcome to the C10H15N language!
 
-Created in Spring 2023 by Justin Jordan at the Westminster Schools of Atlanta, Georgia
+Created in Spring 2023 by Jostin
 _____
 src.C10H15N is a language whos primary purpose (at least at the present moment) is to create "math explainers", in other
 words, animations that visually display mathematical concepts. One might say "why make a whole language for this" to
