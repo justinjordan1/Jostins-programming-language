@@ -1,0 +1,6 @@
+var screen object = Canvas();
+
+screen.setGridSize(8, 8);
+screen.setPixel(3, 4, 255, 0, 128);
+
+return screen.width;

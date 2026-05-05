@@ -5,7 +5,6 @@ import src.lexicalAnalysis.Types;
 
 import java.util.ArrayList;
 
-import static java.lang.Integer.parseInt;
 import static src.C10H15N.runtimeError;
 
 public class Environment {
@@ -15,18 +14,20 @@ public class Environment {
     public Environment(Environment parent, ArrayList<NamedValue> entries) {
         this.parent = parent;
         this.entries = new ArrayList<>();
-//
     }
 
     public Environment(Environment env) {
-        this.entries = env.entries;
-        this.parent = env.parent;
-
-
+        this.entries = new ArrayList<>();
+        this.parent = env;
     }
 
     public Lexeme typeElevate(Lexeme value, Types targetType) {
         switch (targetType) {
+            case OBJECT:
+                if (value.getType() == Types.OBJECT) {
+                    return value;
+                }
+                break;
             case INTERGER:
                 if (value.getType() == Types.DOS) {
                     return new Lexeme(Types.INTERGER, value.getLineNumber(), (int) Math.round(value.getDosValue()));
@@ -77,14 +78,10 @@ public class Environment {
                 }
                 break;
         }
-        // If the value cannot be elevated to the target type, return null
-        System.out.println("casting error");
         return null;
     }
 
     public void update(Lexeme identifier, Lexeme newValue) {
-        // Ensure this identifier is defined in this or some parent environment lookup (identifier);
-        // Search this environment and update if found locally
         for (NamedValue namedValue : entries) {
             if (namedValue.getIdentifier().equals(identifier)) {
 
@@ -98,8 +95,6 @@ public class Environment {
                                     " and cannot be assigned a value of type " + providedType,
                             identifier.getLineNumber());
                 namedValue.setValue(newValue);
-                // Whether a value of a valid type was provided or not,
-                // quit looking once we find a match.
                 return;
             } else if (namedValue.getIdentifier().getStringValue().equals(identifier.getStringValue())) {
 
@@ -113,31 +108,62 @@ public class Environment {
                                     " and cannot be assigned a value of type " + providedType,
                             identifier.getLineNumber());
                 namedValue.setValue(newValue);
-                // Whether a value of a valid type was provided or not,
-                // quit looking once we find a match.
                 return;
             }
         }
-        // If no local match is found, try the update in the parent environment
 
-        parent.update(identifier, newValue);
+        if (parent != null) {
+            parent.update(identifier, newValue);
+            return;
+        }
+
+        error("'" + identifier.getStringValue() + "' is undefined.", identifier.getLineNumber());
     }
 
 
     public void add(Types type, Lexeme identifier) {
-//        if (entries == null) {
-//            entries = new ArrayList<>();
-//        }
         NamedValue namedValue = new NamedValue(type, identifier);
         entries.add(namedValue);
     }
 
     public void funcAdd(Lexeme identifier, Lexeme value) {
-//        if (entries == null) {
-//            entries = new ArrayList<>();
-//        }
-
         NamedValue namedValue = new NamedValue(identifier.getType(), identifier);
+        namedValue.setValue(value);
+        entries.add(namedValue);
+    }
+
+    public boolean hasLocal(Lexeme identifier) {
+        return lookupLocal(identifier) != null;
+    }
+
+    public Lexeme lookupLocal(Lexeme identifier) {
+        for (NamedValue namedValue : entries) {
+            if (namedValue.getIdentifier().getStringValue().equals(identifier.getStringValue())) {
+                return namedValue.getValue();
+            }
+        }
+        return null;
+    }
+
+    public void setLocal(Lexeme identifier, Lexeme value) {
+        for (NamedValue namedValue : entries) {
+            if (namedValue.getIdentifier().getStringValue().equals(identifier.getStringValue())) {
+                Types declaredType = namedValue.getType();
+                Types providedType = value.getType();
+                Lexeme updatedValue = value;
+                if (providedType != declaredType)
+                    updatedValue = typeElevate(value, declaredType);
+                if (updatedValue == null)
+                    error("Variable *" + identifier.getStringValue() +
+                                    "' has been declared as type " + declaredType +
+                                    " and cannot be assigned a value of type " + providedType,
+                            identifier.getLineNumber());
+                namedValue.setValue(updatedValue);
+                return;
+            }
+        }
+
+        NamedValue namedValue = new NamedValue(value.getType(), identifier);
         namedValue.setValue(value);
         entries.add(namedValue);
     }
@@ -156,7 +182,6 @@ public class Environment {
 
     public Lexeme lookup(Lexeme identifier) {
         Lexeme value = softLookup(identifier);
-        //System.out.println(value + "lookupTesting");
         if (value == null) {
             if (parent != null) return parent.lookup(identifier);
 

@@ -1,11 +1,7 @@
 package src.lexicalAnalysis;
 
-import src.C10H15N;
-
 import java.util.ArrayList;
 import java.util.HashMap;
-
-import src.Evaluation.Environment;
 
 import static src.C10H15N.syntaxError;
 
@@ -21,7 +17,6 @@ public class Lexer {
     private final HashMap<String, Types> keywords;
 
 
-    //Core Lexing
     public ArrayList<Lexeme> lex() {
         while (!isAtEnd()) {
             startOfCurrentLexeme = currentPosition;
@@ -180,7 +175,6 @@ public class Lexer {
         }
     }
 
-    //I only support block comments, starting with ç and ending with ø
     private Lexeme lexComment() {
         while (!(isAtEnd() || match('ø'))) {
             advance();
@@ -192,7 +186,6 @@ public class Lexer {
         while (isAlphaNumeric(peek())) {
             advance();
         }
-        //is thi
         String text = source.substring(startOfCurrentLexeme, currentPosition);
         Types type = keywords.get(text);
 
@@ -293,7 +286,6 @@ public class Lexer {
     }
 
 
-    // Supplemental Helper Methods
     private boolean isDigit(char c) {
         return c >= '0' && c <= '9';
     }
@@ -314,24 +306,22 @@ public class Lexer {
     private HashMap<String, Types> getKeywords() {
         HashMap<String, Types> keywords = new HashMap<>();
 
-        // Data types
         keywords.put("george", Types.GEORGE);
         keywords.put("interger", Types.INTERGER);
         keywords.put("string", Types.STRING);
         keywords.put("matrix", Types.MATRIX);
         keywords.put("char", Types.CHAR);
         keywords.put("dos", Types.DOS);
+        keywords.put("object", Types.OBJECT);
         keywords.put("true", Types.TRUE);
         keywords.put("false", Types.FALSE);
-
-        // Initialization
 
         keywords.put("var", Types.VAR);
         keywords.put("return", Types.RETURN);
         keywords.put("collection", Types.COLLECTION);
+        keywords.put("class", Types.CLASS);
         keywords.put("matrixsize", Types.MATRIXSIZE);
 
-        // Looping
         keywords.put("while", Types.WHILE);
         keywords.put("indefinitlypreform", Types.INDEFINITELYPERFORM);
         keywords.put("whilethisisbasicallytrue", Types.WHILETHISISBASICALLYTRUE);
@@ -342,7 +332,6 @@ public class Lexer {
         keywords.put("break", Types.BREAK);
         keywords.put("get", Types.GET);
 
-        // Conditionals
         keywords.put("if", Types.IF);
         keywords.put("elseif", Types.ELSEIF);
         keywords.put("else", Types.ELSE);

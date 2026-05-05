@@ -1,0 +1,360 @@
+vec3 : matrix(dos x, dos y, dos z) {
+    return [[x]\[y]\[z]];
+}
+
+dot : dos(matrix a, matrix b) {
+    collection d matrix[[]] = a ˚ b;
+    return get d[[0,0]];
+}
+
+unit : matrix(matrix v) {
+    var len dos = dot(v, v) î 0.5;
+    return v / len;
+}
+
+reflect : matrix(matrix v, matrix n) {
+    return v - n * (2.0 * dot(v, n));
+}
+
+hadamard : matrix(matrix a, matrix b) {
+    return vec3(get a[[0,0]] * get b[[0,0]], get a[[1,0]] * get b[[1,0]], get a[[2,0]] * get b[[2,0]]);
+}
+
+randomUnitVector : matrix() {
+    collection p matrix[[]] = vec3(random(-1.0, 1.0), random(-1.0, 1.0), random(-1.0, 1.0));
+
+    while (dot(p, p) > 1.0) {
+        p = vec3(random(-1.0, 1.0), random(-1.0, 1.0), random(-1.0, 1.0));
+    }
+
+    return unit(p);
+}
+
+background : matrix(matrix direction) {
+    collection u matrix[[]] = unit(direction);
+    var a dos = 0.5 * (get u[[1,0]] + 1.0);
+    return vec3(1.0, 1.0, 1.0) * (1.0 - a) + vec3(0.5, 0.7, 1.0) * a;
+}
+
+class Ray {
+    init : interger(matrix rayOrigin, matrix rayDirection) {
+        this.origin = rayOrigin;
+        this.direction = rayDirection;
+        return 0;
+    }
+
+    at : matrix(dos t) {
+        return origin + direction * t;
+    }
+}
+
+class Metal {
+    init : interger(matrix albedo, dos fuzz) {
+        this.albedo = albedo;
+        this.fuzz = fuzz;
+        return 0;
+    }
+}
+
+hitSphere : dos(matrix center, dos radius, object ray) {
+    collection oc matrix[[]] = ray.origin - center;
+    var a dos = dot(ray.direction, ray.direction);
+    var halfB dos = dot(oc, ray.direction);
+    var c dos = dot(oc, oc) - radius * radius;
+    var discriminant dos = halfB * halfB - a * c;
+
+    if (discriminant < 0.0) {
+        return -1.0;
+    }
+
+    return ((0.0 - halfB) - (discriminant î 0.5)) / a;
+}
+
+scatterMetal : matrix(object ray, interger depth, dos t, matrix center, dos radius, object material, object leftMat, object rightMat, object groundMat) {
+    collection point matrix[[]] = ray.at(t);
+    collection normal matrix[[]] = (point - center) / radius;
+    collection reflected matrix[[]] = unit(reflect(ray.direction, normal));
+
+    if (material.fuzz > 0.0) {
+        reflected = reflected + randomUnitVector() * material.fuzz;
+    }
+
+    if (dot(reflected, normal) <= 0.0) {
+        return vec3(0.0, 0.0, 0.0);
+    }
+
+    collection scatteredOrigin matrix[[]] = point + normal * 0.001;
+    var scattered object = Ray(scatteredOrigin, reflected);
+    return hadamard(material.albedo, rayColor(scattered, depth - 1, leftMat, rightMat, groundMat));
+}
+
+scatterDiffuse : matrix(object ray, interger depth, dos t, matrix center, dos radius, object material, object leftMat, object rightMat, object groundMat) {
+    collection point matrix[[]] = ray.at(t);
+    collection normal matrix[[]] = unit((point - center) / radius);
+
+    collection scatterDirection matrix[[]] = normal + randomUnitVector();
+    collection scatteredOrigin matrix[[]] = point + normal * 0.001;
+    var scattered object = Ray(scatteredOrigin, scatterDirection);
+
+    return hadamard(material.albedo, rayColor(scattered, depth - 1, leftMat, rightMat, groundMat));
+}
+
+rayColor : matrix(object ray, interger depth, object leftMat, object rightMat, object groundMat) {
+    if (depth <= 0) {
+        return vec3(0.0, 0.0, 0.0);
+    }
+
+    collection leftPos matrix[[]] = vec3(-0.55, 0.0, -1.0);
+    collection rightPos matrix[[]] = vec3(0.55, 0.0, -1.0);
+    collection groundPos matrix[[]] = vec3(0.0, -100.5, -1.0);
+
+    var tLeft dos = hitSphere(leftPos, 0.5, ray);
+    var tRight dos = hitSphere(rightPos, 0.5, ray);
+    var tGround dos = hitSphere(groundPos, 100.0, ray);
+
+    var closestT dos = 10000.0;
+    var hitIndex interger = 0;
+
+    if (tLeft > 0.001) {
+        closestT = tLeft;
+        hitIndex = 1;
+    }
+
+    if (tRight > 0.001) {
+        if (tRight < closestT) {
+            closestT = tRight;
+            hitIndex = 2;
+        }
+    }
+
+    if (tGround > 0.001) {
+        if (tGround < closestT) {
+            closestT = tGround;
+            hitIndex = 3;
+        }
+    }
+
+    if (hitIndex == 1) {
+        return scatterDiffuse(ray, depth, closestT, leftPos, 0.5, leftMat, leftMat, rightMat, groundMat);
+    }
+
+    if (hitIndex == 2) {
+        return scatterMetal(ray, depth, closestT, rightPos, 0.5, rightMat, leftMat, rightMat, groundMat);
+    }
+
+    if (hitIndex == 3) {
+        return scatterDiffuse(ray, depth, closestT, groundPos, 100.0, groundMat, leftMat, rightMat, groundMat);
+    }
+
+    return background(ray.direction);
+}
+
+clearFrame : interger(object screen, matrix zBuffer) {
+    for (var y interger = 0; y < screen.height) ¬+ {
+        for (var x interger = 0; x < screen.width) ¬+ {
+            screen.setPixel(x, y, 0, 0, 0);
+            zBuffer[[y,x]] = 10000.0;
+        }
+    }
+
+    return 0;
+}
+
+plotDepth : interger(object screen, matrix zBuffer, interger px, interger py, dos depth, interger red, interger green, interger blue) {
+    if (px >= 0) {
+        if (px < screen.width) {
+            if (py >= 0) {
+                if (py < screen.height) {
+                    if (depth < get zBuffer[[py,px]]) {
+                        zBuffer[[py,px]] = depth;
+                        screen.setPixel(px, py, red, green, blue);
+                    }
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+
+renderSpinFrame : interger(interger frame) {
+    print("Starting frame: ");
+    print(frame);
+    print("\n");
+
+    clearFrame(screen, zBuffer);
+
+    var angle dos = (frame * 1.0 / frameCount) * 6.2831853;
+    var c dos = cos(angle);
+    var s dos = sin(angle);
+
+    collection rotY matrix[[]] = [[c, 0.0, s] \ [0.0, 1.0, 0.0] \ [(0.0 - s), 0.0, c]];
+
+    for (var y interger = 0; y < imageHeight) ¬+ {
+        for (var x interger = 0; x < imageWidth) ¬+ {
+            collection hitPoint matrix[[]] = vec3(get pointX[[y,x]], get pointY[[y,x]], get pointZ[[y,x]]);
+
+            collection translated matrix[[]] = hitPoint - pivot;
+            collection rotated matrix[[]] = rotY * translated;
+            collection final3D matrix[[]] = rotated + pivot;
+
+            var projZ dos = get final3D[[2,0]];
+
+            if (projZ < -0.1) {
+                var fov dos = imageHeight / viewportHeight;
+
+                var screenX dos = (get final3D[[0,0]] / (0.0 - projZ)) * fov + (imageWidth / 2.0);
+                var screenY dos = (get final3D[[1,0]] / (0.0 - projZ)) * fov + (imageHeight / 2.0);
+
+                var finalX interger = screenX;
+                var finalY interger = imageHeight - screenY;
+
+                var red interger = get colorR[[y,x]];
+                var green interger = get colorG[[y,x]];
+                var blue interger = get colorB[[y,x]];
+                var depth dos = 0.0 - projZ;
+
+                plotDepth(screen, zBuffer, finalX, finalY, depth, red, green, blue);
+                plotDepth(screen, zBuffer, finalX + 1, finalY, depth, red, green, blue);
+                plotDepth(screen, zBuffer, finalX, finalY + 1, depth, red, green, blue);
+                plotDepth(screen, zBuffer, finalX + 1, finalY + 1, depth, red, green, blue);
+            }
+        }
+    }
+
+    screen.captureFrame();
+    return 0;
+}
+
+var imageWidth interger = 200;
+var imageHeight interger = 200;
+var samplesPerPixel interger = 50;
+var maxDepth interger = 12;
+var frameCount interger = 60;
+var totalPixels interger = imageWidth * imageHeight;
+var shuffleStride interger = 7919;
+var bakeFrameCount interger = 10;
+var bakeFrameInterval interger = totalPixels / bakeFrameCount;
+var holdFrameCount interger = 3;
+var eraseFrameCount interger = 10;
+var eraseFrameInterval interger = totalPixels / eraseFrameCount;
+
+var viewportWidth dos = 3.5714;
+var viewportHeight dos = 3.5714;
+var focalLength dos = 1.0;
+
+var screen object = Canvas(imageWidth, imageHeight, 800, 800);
+collection zBuffer matrix[[]] = imageWidth`imageHeight;
+
+collection origin matrix[[]] = vec3(0.0, 0.0, 0.0);
+collection horizontal matrix[[]] = vec3(viewportWidth, 0.0, 0.0);
+collection vertical matrix[[]] = vec3(0.0, viewportHeight, 0.0);
+collection lowerLeftCorner matrix[[]] = origin - horizontal / 2.0 - vertical / 2.0 - vec3(0.0, 0.0, focalLength);
+
+var leftMaterial object = Metal(vec3(1.0, 0.45, 0.08), 0.0);
+var rightMaterial object = Metal(vec3(0.8, 0.8, 0.8), 0.1);
+var groundMaterial object = Metal(vec3(0.04, 0.08, 0.45), 0.0);
+
+collection pivot matrix[[]] = vec3(0.0, 0.0, -1.0);
+collection pointX matrix[[]] = imageWidth`imageHeight;
+collection pointY matrix[[]] = imageWidth`imageHeight;
+collection pointZ matrix[[]] = imageWidth`imageHeight;
+collection colorR matrix[[]] = imageWidth`imageHeight;
+collection colorG matrix[[]] = imageWidth`imageHeight;
+collection colorB matrix[[]] = imageWidth`imageHeight;
+
+print("Baking point cloud\n");
+screen.captureFrame();
+
+for (var pixelOrder interger = 0; pixelOrder < totalPixels) ¬+ {
+        var pixelIndex interger = (pixelOrder * shuffleStride) %% totalPixels;
+        var x interger = pixelIndex %% imageWidth;
+        var y interger = pixelIndex / imageWidth;
+
+        var flippedY interger = imageHeight - 1 - y;
+
+        var uCenter dos = (x + 0.5) / imageWidth;
+        var vCenter dos = (flippedY + 0.5) / imageHeight;
+
+        collection dirCenter matrix[[]] = lowerLeftCorner + horizontal * uCenter + vertical * vCenter - origin;
+        var rayCenter object = Ray(origin, dirCenter);
+
+        collection leftPos matrix[[]] = vec3(-0.55, 0.0, -1.0);
+        collection rightPos matrix[[]] = vec3(0.55, 0.0, -1.0);
+        collection groundPos matrix[[]] = vec3(0.0, -100.5, -1.0);
+
+        var tLeft dos = hitSphere(leftPos, 0.5, rayCenter);
+        var tRight dos = hitSphere(rightPos, 0.5, rayCenter);
+        var tGround dos = hitSphere(groundPos, 100.0, rayCenter);
+
+        var closestT dos = 10000.0;
+        if (tLeft > 0.001) { closestT = tLeft; }
+        if (tRight > 0.001) { if (tRight < closestT) { closestT = tRight; } }
+        if (tGround > 0.001) { if (tGround < closestT) { closestT = tGround; } }
+
+        if (closestT == 10000.0) {
+            closestT = 5.0;
+        }
+
+        collection hitPoint matrix[[]] = rayCenter.at(closestT);
+
+        collection pixelColor matrix[[]] = vec3(0.0, 0.0, 0.0);
+
+        for (var samp interger = 0; samp < samplesPerPixel) ¬+ {
+            var u dos = (x + random(0.0, 1.0)) / imageWidth;
+            var v dos = (flippedY + random(0.0, 1.0)) / imageHeight;
+            collection direction matrix[[]] = lowerLeftCorner + horizontal * u + vertical * v - origin;
+            var ray object = Ray(origin, direction);
+            pixelColor = pixelColor + rayColor(ray, maxDepth, leftMaterial, rightMaterial, groundMaterial);
+        }
+
+        collection color matrix[[]] = pixelColor / (samplesPerPixel * 1.0);
+
+        pointX[[y,x]] = get hitPoint[[0,0]];
+        pointY[[y,x]] = get hitPoint[[1,0]];
+        pointZ[[y,x]] = get hitPoint[[2,0]];
+        var red interger = (get color[[0,0]] î 0.5) * 255;
+        var green interger = (get color[[1,0]] î 0.5) * 255;
+        var blue interger = (get color[[2,0]] î 0.5) * 255;
+        colorR[[y,x]] = red;
+        colorG[[y,x]] = green;
+        colorB[[y,x]] = blue;
+        screen.setPixel(x, y, red, green, blue);
+
+        if (((pixelOrder + 1) %% bakeFrameInterval) == 0) {
+            screen.captureFrame();
+        }
+}
+
+for (var hold interger = 0; hold < holdFrameCount) ¬+ {
+    screen.captureFrame();
+}
+
+for (var frame interger = 0; frame < frameCount) ¬+ {
+    renderSpinFrame(frame);
+}
+
+for (var frame interger = frameCount - 2; frame > 0) ¬- {
+    renderSpinFrame(frame);
+}
+
+renderSpinFrame(0);
+
+for (var pixelOrder interger = 0; pixelOrder < totalPixels) ¬+ {
+    var pixelIndex interger = (pixelOrder * shuffleStride) %% totalPixels;
+    var x interger = pixelIndex %% imageWidth;
+    var y interger = pixelIndex / imageWidth;
+
+    screen.setPixel(x, y, 0, 0, 0);
+    screen.setPixel(x + 1, y, 0, 0, 0);
+    screen.setPixel(x, y + 1, 0, 0, 0);
+    screen.setPixel(x + 1, y + 1, 0, 0, 0);
+
+    if (((pixelOrder + 1) %% eraseFrameInterval) == 0) {
+        screen.captureFrame();
+    }
+}
+
+screen.collapse("photoreal_spin.gif", 4);
+
+return 0;

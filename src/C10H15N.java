@@ -1,13 +1,10 @@
 package src;
 
-import src.Evaluation.EnviormentTester;
 import src.Evaluation.Environment;
 import src.Evaluation.Evaluator;
-import src.Evaluation.NamedValue;
-import src.Recognizer.Parser;
 import src.lexicalAnalysis.Lexeme;
 import src.lexicalAnalysis.Lexer;
-//import testInput.EnviormentTester;
+import src.Recognizer.Parser;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -30,7 +27,6 @@ public class C10H15N {
         } catch (IOException exception) {
             throw new IOException(exception.toString());
         }
-        // EnviormentTester.main(args);
     }
 
     private static String getSourceCodeFromFile(String path) throws IOException {
@@ -39,21 +35,16 @@ public class C10H15N {
     }
 
     private static void runFile(String path) throws IOException {
-        System.out.println("Running" + path + "...");
+        System.out.println("Running " + path + "...");
         String source = getSourceCodeFromFile(path);
-        // Lexing
         Lexer lexer = new Lexer(source);
         ArrayList<Lexeme> lexemes = lexer.lex();
-// Parsing
+
         Parser parser = new Parser(lexemes);
         Lexeme programParseTree = parser.program();
-// Environments
-
 
         Environment globalEnvironment = new Environment(null, new ArrayList<>());
 
-        //Evaluation
-//        programParseTree.printAsParseTree();
         Evaluator evaluator = new Evaluator();
         Lexeme programResult = evaluator.eval(programParseTree, globalEnvironment);
 
@@ -86,7 +77,7 @@ public class C10H15N {
     private static void printErrors() {
         final String ANSI_YELLOW = "\u001B[33m";
         final String ANSI_RED_BACKGROUND = "\u001B[41m";
-        final String ANSI_RESET = "\u001B[Om";
+        final String ANSI_RESET = "\u001B[0m";
 
         for (String syntaxErrorMessage : syntaxErrorMessages)
             System.out.println(ANSI_YELLOW + syntaxErrorMessage + ANSI_RESET);

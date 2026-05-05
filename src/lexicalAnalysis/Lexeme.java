@@ -2,7 +2,6 @@ package src.lexicalAnalysis;
 
 import src.Evaluation.Environment;
 
-import java.io.ObjectStreamException;
 import java.util.ArrayList;
 
 public final class Lexeme {
@@ -15,9 +14,11 @@ public final class Lexeme {
     private Boolean booleanValue;
     private String stringValue;
     private Environment definingEnviorment;
+    private Environment objectEnvironment;
     private Object[] arrayValue;
     private ArrayList<Object> arrayListValue;
     private Object[][] matrixValue;
+    private Object nativeValue;
 
     public void setEnvironment(Environment env) {
         definingEnviorment = env;
@@ -108,9 +109,6 @@ public final class Lexeme {
         this.booleanValue = booleanValue;
     }
 
-    //public Boolean isEqual(Lexeme other) {
-    //return this.isEqua}
-
     public String toString() {
         String str = type + " Line: " + lineNumber + " value: ";
         if (type == Types.INTERGER) {
@@ -126,6 +124,10 @@ public final class Lexeme {
             addvalue(str);
 
             str += "\"" + stringValue + "\"";
+        } else if (type == Types.matrix && matrixValue != null) {
+            str += matrixToString();
+        } else if (type == Types.OBJECT) {
+            str += stringValue == null ? "object" : stringValue;
         }
         return str;
     }
@@ -135,11 +137,8 @@ public final class Lexeme {
     }
 
 
-    // --------------- Printing Lexemes as Parse Trees ---------------
-
     public void printAsParseTree() {
         System.out.println(getPrintableTree(this, 0));
-        //System.out.println(this.children);
 
     }
 
@@ -195,10 +194,10 @@ public final class Lexeme {
             case DOS -> doubleValue;
             case GEORGE -> booleanValue;
             case STRING -> stringValue;
+            case OBJECT -> nativeValue == null ? objectEnvironment : nativeValue;
             case array -> arrayValue;
-            case linkedList -> arrayValue; // Assuming you're using the same field for linked lists
+            case linkedList -> arrayListValue;
             case matrix -> matrixValue;
-            // Assuming you have a field for matrix values
             default -> throw new IllegalStateException("No value associated with this Lexeme type: " + type);
         };
     }
@@ -229,6 +228,12 @@ public final class Lexeme {
         this.arrayValue = value;
     }
 
+    public Lexeme(Types type, int lineNumber, Environment value) {
+        this.type = type;
+        this.lineNumber = lineNumber;
+        this.objectEnvironment = value;
+    }
+
 
     public Object[] getArrayValue() {
         return arrayValue;
@@ -250,5 +255,55 @@ public final class Lexeme {
         return matrixValue;
     }
 
+    public Environment getObjectEnvironment() {
+        return objectEnvironment;
+    }
+
+    public void setObjectEnvironment(Environment objectEnvironment) {
+        this.objectEnvironment = objectEnvironment;
+    }
+
+    public Object getNativeValue() {
+        return nativeValue;
+    }
+
+    public void setNativeValue(Object nativeValue) {
+        this.nativeValue = nativeValue;
+    }
+
+    public void setStringValue(String stringValue) {
+        this.stringValue = stringValue;
+    }
+
+    private String matrixToString() {
+        StringBuilder builder = new StringBuilder("[");
+
+        for (int i = 0; i < matrixValue.length; i++) {
+            if (i > 0) builder.append(", ");
+            builder.append("[");
+            for (int j = 0; j < matrixValue[i].length; j++) {
+                if (j > 0) builder.append(", ");
+                builder.append(cellToString(matrixValue[i][j]));
+            }
+            builder.append("]");
+        }
+
+        builder.append("]");
+        return builder.toString();
+    }
+
+    private String cellToString(Object cell) {
+        if (cell instanceof Lexeme lexeme) {
+            return switch (lexeme.getType()) {
+                case INTERGER -> Integer.toString(lexeme.getIntValue());
+                case DOS -> Double.toString(lexeme.getDosValue());
+                case GEORGE -> Boolean.toString(lexeme.getBooleanValue());
+                case STRING -> lexeme.getStringValue();
+                default -> lexeme.toString();
+            };
+        }
+
+        return String.valueOf(cell);
+    }
 
 }

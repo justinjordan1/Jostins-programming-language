@@ -1,0 +1,26 @@
+var n, i interger = 0;
+
+collection fibMatrix matrix[[]] = 2`2;
+collection result matrix[[]] = 2`2;
+
+fibMatrix[[0,0]] = 1;
+fibMatrix[[0,1]] = 1;
+fibMatrix[[1,0]] = 1;
+fibMatrix[[1,1]] = 0;
+
+result[[0,0]] = 1;
+result[[0,1]] = 0;
+result[[1,0]] = 0;
+result[[1,1]] = 1;
+
+var target interger = 10;
+var counter interger = 0;
+
+whilethisisbasicallytrue (counter < target) 10% {
+
+    result = result * fibMatrix;
+
+    counter = counter + 1;
+}
+
+return result;

@@ -1,0 +1,12 @@
+collection values matrix[[]] = 3`3;
+
+for (var y interger = 0; y < 3) ¬+ {
+    for (var x interger = 0; x < 3) ¬+ {
+        values[[y,x]] = y * 10 + x;
+    }
+}
+
+var row interger = 2;
+var column interger = 1;
+
+return get values[[row,column]];

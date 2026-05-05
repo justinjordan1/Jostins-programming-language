@@ -5,20 +5,14 @@ import src.lexicalAnalysis.Lexeme;
 import src.lexicalAnalysis.Types;
 
 import java.util.ArrayList;
-import java.util.Collection;
-
 import static src.lexicalAnalysis.Types.*;
-import static src.lexicalAnalysis.Types.whileTrue;
 
 public class Parser {
-    private static final boolean printDebugMessages = true;
-    //instance var
     private Lexeme currentLexeme;
     private final ArrayList<Lexeme> lexemes;
     private int nextLexemeIndex;
     private int callingFromIdentifierCaseEnd;
 
-    //core support
     private Types peek() {
         return currentLexeme.getType();
     }
@@ -33,7 +27,7 @@ public class Parser {
     }
 
     private boolean checkNext(Types type) {
-        if (nextLexemeIndex > lexemes.size()) return false;
+        if (nextLexemeIndex >= lexemes.size()) return false;
         return lexemes.get(nextLexemeIndex).getType() == type;
     }
 
@@ -51,15 +45,10 @@ public class Parser {
         return toReturn;
     }
 
-    //constructor
     public Parser(ArrayList<Lexeme> lexemes) {
         this.lexemes = lexemes;
         this.nextLexemeIndex = 0;
-        System.out.println(lexemes);
         advance();
-        //program();
-
-
     }
 
     public Lexeme program() {
@@ -73,14 +62,12 @@ public class Parser {
             Lexeme statement = statement();
             statementList.AddChild(statement);
         }
-        //(statementList.children);
         return statementList;
     }
 
     private boolean statementPending() {
 
         return check(VAR) ||
-                //checkNext(FUNC_DEFINITION) ||
                 check(IDENTIFIER) ||
                 check(IF) ||
                 check(WHILE) ||
@@ -91,6 +78,7 @@ public class Parser {
                 check(OBRACE) ||
                 check(RETURN) ||
                 check(BREAK) ||
+                check(CLASS) ||
                 check(COLLECTION) ||
                 check(GET);
     }
@@ -110,29 +98,40 @@ public class Parser {
             if (check(ASSIGNMENT)) {
 
                 Lexeme assign = consume(ASSIGNMENT);
-                boolean isFunctionCall = false;
-                Lexeme expression = null;
-                Lexeme funCall = null;
-                if (functionCallPending()) {
-                    funCall = functionCall();
-                    isFunctionCall = !isFunctionCall;
-                } else {
-                    expression = expression();
-                }
+                Lexeme expression = expression();
                 consume(SEMI_COLON);
                 Lexeme varAsssignment = new Lexeme(varAssignment);
                 varAsssignment.AddChild(identifier);
                 varAsssignment.AddChild(assign);
-                if (isFunctionCall) {
-                    varAsssignment.AddChild(funCall);
-                } else {
-                    varAsssignment.AddChild(expression);
-                }
+                varAsssignment.AddChild(expression);
 
                 return varAsssignment;
+            } else if (check(PERIOD)) {
+                consume(PERIOD);
+                Lexeme member = consume(IDENTIFIER);
+
+                if (check(ASSIGNMENT)) {
+                    Lexeme assignment = consume(ASSIGNMENT);
+                    Lexeme expression = expression();
+                    consume(SEMI_COLON);
+                    Lexeme fieldAssignment = new Lexeme(Types.fieldAssignment);
+                    fieldAssignment.AddChild(identifier);
+                    fieldAssignment.AddChild(member);
+                    fieldAssignment.AddChild(assignment);
+                    fieldAssignment.AddChild(expression);
+                    return fieldAssignment;
+                } else if (check(OPAREN)) {
+                    Lexeme call = methodCall(identifier, member);
+                    consume(SEMI_COLON);
+                    return call;
+                }
+
+                return error("Malformed object member access");
             } else if (check(OPAREN)) {
 
-                return functionCall(identifier);
+                Lexeme funcCallNode = functionCall(identifier);
+                if (check(SEMI_COLON)) consume(SEMI_COLON);
+                return funcCallNode;
             } else if (checkNext(OBRACKET)) {
 
                 consume(OBRACKET);
@@ -188,7 +187,7 @@ public class Parser {
                             return arrayListAssi;
 
                         } else {
-                            error("Idk how you got there but, Malformed arraylist Assinment");
+                            error("Malformed arraylist Assinment");
                         }
                     }
 
@@ -197,11 +196,11 @@ public class Parser {
 
                 Lexeme inlineMatrixAssi = new Lexeme(MatrixAssi);
                 consume(OMATRIX);
-                Lexeme number = number();
+                Lexeme index = expression();
                 ArrayList<Lexeme> numberList = new ArrayList<>();
                 while (check(COMMA)) {
                     consume(COMMA);
-                    Lexeme tempVal = number();
+                    Lexeme tempVal = expression();
                     numberList.add(tempVal);
                 }
                 consume(CMATRIX);
@@ -209,7 +208,7 @@ public class Parser {
                 Lexeme expression = expression();
                 consume(SEMI_COLON);
                 inlineMatrixAssi.AddChild(identifier);
-                inlineMatrixAssi.AddChild(number);
+                inlineMatrixAssi.AddChild(index);
                 inlineMatrixAssi.addChildren(numberList);
                 inlineMatrixAssi.AddChild(assignment);
                 inlineMatrixAssi.AddChild(expression);
@@ -226,7 +225,6 @@ public class Parser {
                 }
 
                 return error("malformed array assignment");
-                //advance();
             }
 
 
@@ -244,21 +242,12 @@ public class Parser {
             return (whileloop);
 
         } else if (check(INDEFINITELYPERFORM)) {
-            Lexeme indefinitleyPreform = new Lexeme(whileTrue);
-
-            Lexeme whileTrue = indefinitleyPreform();
-
-            Lexeme block = block();
-            whileTrue.AddChild(whileTrue);
-            whileTrue.AddChild(block);
-            return (indefinitleyPreform);
+            return indefinitleyPreform();
         } else if (check(WHILETHISISBASICALLYTRUE)) {
             Lexeme whilePercent = new Lexeme(Types.whilePercent);
 
             Lexeme whileThisIsBasicallyTrue = whileThisIsBasicallyTrue();
-            Lexeme block = block();
             whilePercent.AddChild(whileThisIsBasicallyTrue);
-            whilePercent.AddChild(block);
             return (whilePercent);
         } else if (check(FOR)) {
             return forLoop();
@@ -274,6 +263,8 @@ public class Parser {
             consume(SEMI_COLON);
             theBreak.AddChild(breakKeyword);
             return theBreak;
+        } else if (check(CLASS)) {
+            return classDefinition();
         } else if (check(COLLECTION)) {
             return collectionInitialization();
         } else if (check(GET)) {
@@ -317,12 +308,13 @@ public class Parser {
             arrayListGet.AddChild(number);
             return arrayListGet;
         } else if (check(OMATRIX)) {
-            Lexeme number = number();
+            consume(OMATRIX);
+            Lexeme index = expression();
             ArrayList<Lexeme> numberList = new ArrayList<>();
-            numberList.add(number);
+            numberList.add(index);
             while (check(COMMA)) {
                 consume(COMMA);
-                Lexeme tempVal = number();
+                Lexeme tempVal = expression();
                 numberList.add(tempVal);
             }
             consume(CMATRIX);
@@ -330,11 +322,11 @@ public class Parser {
             matrixGet.AddChild(get);
             matrixGet.AddChild(identifier);
             matrixGet.addChildren(numberList);
+            return matrixGet;
 
         } else {
             return error("malformed collection getter");
         }
-        return error("malformed collection getter");
     }
 
     private Lexeme expressionList() {
@@ -351,34 +343,28 @@ public class Parser {
         return expressList;
     }
 
+    private Lexeme optionalExpressionList() {
+        if (check(CPAREN)) {
+            return new Lexeme(expressionList);
+        }
+
+        return expressionList();
+    }
+
     private Lexeme varInitialization() {
 
         Lexeme var = consume(VAR);
         Lexeme identList = varIdentifierList();
         Lexeme type = dataType();
         Lexeme assignment = consume(ASSIGNMENT);
-        Lexeme expression = null;
-        Lexeme funCall = null;
-        boolean isFunctionCall = false;
-
-
-        if (check(IDENTIFIER) && checkNext(OPAREN)) {
-            funCall = functionCall();
-            isFunctionCall = !isFunctionCall;
-        } else {
-            expression = expression();
-        }
+        Lexeme expression = expression();
         consume(SEMI_COLON);
         Lexeme varInt = new Lexeme(varInitialization);
         varInt.AddChild(var);
         varInt.AddChild(identList);
         varInt.AddChild(type);
         varInt.AddChild(assignment);
-        if (isFunctionCall) {
-            varInt.AddChild(funCall);
-        } else {
-            varInt.AddChild(expression);
-        }
+        varInt.AddChild(expression);
         return varInt;
 
     }
@@ -403,7 +389,6 @@ public class Parser {
 
     private Lexeme functionDefinition(Lexeme identifier) {
 
-        //Lexeme identifier = consume(IDENTIFIER);
         Lexeme funcDef = consume(FUNC_DEFINITION);
         Lexeme type = dataType();
         consume(OPAREN);
@@ -419,6 +404,17 @@ public class Parser {
         return funcDefActual;
     }
 
+    private Lexeme classDefinition() {
+        Lexeme classKeyword = consume(CLASS);
+        Lexeme className = consume(IDENTIFIER);
+        Lexeme block = block();
+        Lexeme classDefinition = new Lexeme(Types.classDefinition);
+        classDefinition.AddChild(classKeyword);
+        classDefinition.AddChild(className);
+        classDefinition.AddChild(block);
+        return classDefinition;
+    }
+
     private Lexeme parameterList() {
         ArrayList<Lexeme> parameters = new ArrayList<>();
         if (!check(CPAREN)) {
@@ -428,6 +424,16 @@ public class Parser {
             param.AddChild(type);
             param.AddChild(identifier);
             parameters.add(param);
+
+            while (check(COMMA)) {
+                consume(COMMA);
+                type = dataType();
+                identifier = consume(IDENTIFIER);
+                param = new Lexeme(parameter);
+                param.AddChild(type);
+                param.AddChild(identifier);
+                parameters.add(param);
+            }
         }
         Lexeme paramList = new Lexeme(parameterList);
         paramList.addChildren(parameters);
@@ -451,7 +457,6 @@ public class Parser {
         consume(OPAREN);
 
         Lexeme varInt = varInitialization();
-        //("hi");
         Lexeme expression = expression();
 
         consume(CPAREN);
@@ -460,7 +465,6 @@ public class Parser {
         forLoopBody.AddChild(varInt);
         forLoopBody.AddChild(expression);
 
-        //(currentLexeme);
         if (check(LOOPINCREMENTPLUS)) {
             Lexeme loopincplus = consume(LOOPINCREMENTPLUS);
             forLoopBody.AddChild(loopincplus);
@@ -476,7 +480,6 @@ public class Parser {
 
         Lexeme block = block();
         forLoopBody.AddChild(block);
-        //(forLoopBody.children);
         return forLoopBody;
     }
 
@@ -545,6 +548,9 @@ public class Parser {
         } else if (check(DOS)) {
             thingToReturn = currentLexeme;
             advance();
+        } else if (check(OBJECT)) {
+            thingToReturn = currentLexeme;
+            advance();
         } else {
             error("Expected data type");
         }
@@ -595,7 +601,6 @@ public class Parser {
         } else {
             return error("Expected an expression");
         }
-        //return error("Expected an expression");
     }
 
 
@@ -702,7 +707,6 @@ public class Parser {
             case PLUS, MINUS, MULTIPLY, DIVIDE, EXPONENTIATE, AND, OR, GREATER, GREATER_EQ, LESS, LESS_EQ, EQUALS, NOT_EQUAL, DOT_PRODUCT, MOD -> binaryOperator = currentLexeme;
             default -> {
                 return error("Expecting Binary Operator");
-                //binaryOperator = new Lexeme(empty);
             }
         }
         advance();
@@ -722,7 +726,7 @@ public class Parser {
             currentLexeme = lexemes.get(nextLexemeIndex - 2);
             while (binaryOperatorPending()) {
                 Lexeme binaryOperator = binaryOperator();
-                currentLexeme = lexemes.get(nextLexemeIndex - 2); //no idea why this is done
+                currentLexeme = lexemes.get(nextLexemeIndex - 2);
                 Lexeme tempPrimary = primary();
                 binaryOperatorChain.add(binaryOperator);
                 binaryOperatorChain.add(tempPrimary);
@@ -757,7 +761,7 @@ public class Parser {
 
         Lexeme functionCall = new Lexeme(funcCall);
         consume(OPAREN);
-        Lexeme expressionList = expressionList();
+        Lexeme expressionList = optionalExpressionList();
         consume(CPAREN);
         functionCall.AddChild(identifier);
         functionCall.AddChild(expressionList);
@@ -769,17 +773,32 @@ public class Parser {
         Lexeme functionCall = new Lexeme(funcCall);
         consume(OPAREN);
         Lexeme identifier = consume(IDENTIFIER);
-        Lexeme expressionList = expressionList();
+        Lexeme expressionList = optionalExpressionList();
         consume(CPAREN);
         functionCall.AddChild(identifier);
         functionCall.AddChild(expressionList);
         return functionCall;
     }
 
+    private Lexeme methodCall(Lexeme receiver, Lexeme method) {
+        Lexeme methodCall = new Lexeme(Types.methodCall);
+        consume(OPAREN);
+        Lexeme expressionList = optionalExpressionList();
+        consume(CPAREN);
+        methodCall.AddChild(receiver);
+        methodCall.AddChild(method);
+        methodCall.AddChild(expressionList);
+        return methodCall;
+    }
+
 
     private Lexeme primary() {
         Lexeme primary = new Lexeme(Types.primary);
-        if (check(DOS) || check(INTERGER)) {
+        if (check(MINUS) || check(MINUS_UNARY)) {
+            Lexeme unary = unaryExpression();
+            primary.AddChild(unary);
+            return primary;
+        } else if (check(DOS) || check(INTERGER)) {
             Lexeme number = number();
             primary.AddChild(number);
             return primary;
@@ -789,15 +808,38 @@ public class Parser {
             return primary;
         } else if (check(IDENTIFIER)) {
             Lexeme identifier = consume(IDENTIFIER);
+            if (check(PERIOD)) {
+                consume(PERIOD);
+                Lexeme member = consume(IDENTIFIER);
+                if (check(OPAREN)) {
+                    Lexeme call = methodCall(identifier, member);
+                    primary.AddChild(call);
+                    return primary;
+                }
+
+                Lexeme fieldAccess = new Lexeme(Types.fieldAccess);
+                fieldAccess.AddChild(identifier);
+                fieldAccess.AddChild(member);
+                primary.AddChild(fieldAccess);
+                return primary;
+            } else if (check(OPAREN)) {
+                Lexeme funcCall = functionCall(identifier);
+                primary.AddChild(funcCall);
+                return primary;
+            }
             primary.AddChild(identifier);
             return primary;
         } else if (booleanLiteralPending()) {
             Lexeme booleanLiteral = booleanLiteral();
             primary.AddChild(booleanLiteral);
             return primary;
-        } else if (functionCallPending()) {
-            Lexeme funcCall = functionCall();
-            primary.AddChild(funcCall);
+        } else if (check(OPAREN)) {
+            Lexeme parenthExp = parenthesizedExpression();
+            primary.AddChild(parenthExp);
+            return primary;
+        } else if (check(GET)) {
+            Lexeme getter = collectionGetter();
+            primary.AddChild(getter);
             return primary;
         } else if (collectionPending()) {
             Lexeme collection = collection();
@@ -807,10 +849,6 @@ public class Parser {
             Lexeme charector = consume(CHAR);
             primary.AddChild(charector);
             return primary;
-        } else if (check(OPAREN)) {
-            Lexeme parenthExp = parenthesizedExpression();
-            primary.AddChild(parenthExp);
-            return primary;
         } else {
             return error("Expected a primary expression.");
         }
@@ -819,7 +857,7 @@ public class Parser {
 
     private Lexeme collectionInitialization() {
         Lexeme collectionInitialization = new Lexeme(Types.collectionInitialization);
-        Lexeme collectionKeyWord = consume(COLLECTION);
+        consume(COLLECTION);
         Lexeme identifier = consume(IDENTIFIER);
         Lexeme collectionType = new Lexeme(whatCollectionType());
         Lexeme dataType = dataType();
@@ -859,7 +897,6 @@ public class Parser {
         Lexeme collectionHelper = new Lexeme(Types.collectionHelper);
         if (check(OBRACKET)) {
             if (checkNext(CBRACKET)) {
-                //must be initialiizing an array
                 consume(OBRACKET);
                 consume(CBRACKET);
                 Lexeme assignment = consume(ASSIGNMENT);
@@ -869,7 +906,6 @@ public class Parser {
 
 
             } else if (checkNext(INTERGER)) {
-                //must be declaring an array with size (INTERGER)
                 consume(OBRACKET);
                 Lexeme arraySize = consume(INTERGER);
                 consume(CBRACKET);
@@ -892,13 +928,13 @@ public class Parser {
             consume(CMATRIX);
             Lexeme assignment = consume(ASSIGNMENT);
             if (checkNext(MATRIXSIZE)) {
-                Lexeme intergerColumn = consume(INTERGER);
+                Lexeme columnExpression = expression();
                 Lexeme matrixSize = consume(MATRIXSIZE);
-                Lexeme intergerRow = consume(INTERGER);
+                Lexeme rowExpression = expression();
                 collectionHelper.AddChild(assignment);
-                collectionHelper.AddChild(intergerColumn);
+                collectionHelper.AddChild(columnExpression);
                 collectionHelper.AddChild(matrixSize);
-                collectionHelper.AddChild(intergerRow);
+                collectionHelper.AddChild(rowExpression);
             } else {
                 Lexeme expression = expression();
                 collectionHelper.AddChild(expression);
@@ -922,7 +958,7 @@ public class Parser {
     private boolean primaryPending() {
 
         return numberPending() || check(STRING) || check(IDENTIFIER) || booleanLiteralPending()
-                || functionCallPending() || collectionPending() || check(CHAR) || parenthesizedExpressionPending();
+                || functionCallPending() || collectionPending() || check(GET) || check(CHAR) || parenthesizedExpressionPending();
     }
 
     private boolean numberPending() {
@@ -934,36 +970,18 @@ public class Parser {
     }
 
     private Lexeme booleanLiteral() {
-        Lexeme booleanLiteral = new Lexeme(Types.booleanLiteral);
         if (booleanLiteralPending()) {
-            booleanLiteral.AddChild(currentLexeme);
+            return advance();
         }
         return new Lexeme(empty);
 
     }
 
     private Lexeme conditional() {
-        int a = 0;
         if (check(IF)) {
-            a++;
             return ifConditional();
-
-
         }
-        while (check(ELSEIF)) {
-            a++;
-            return elseIfConditional();
-
-        }
-        while (check(ELSE)) {
-            a++;
-            return elseConditional();
-
-        }
-        if (a == 0) {
-            return error("Expected conditional keyword (IF, ELSEIF, or ELSE)");
-        }
-        return error("Expected conditional keyword (IF, ELSEIF, or ELSE)");
+        return error("Expected IF keyword");
     }
 
     private Lexeme ifConditional() {
@@ -977,30 +995,24 @@ public class Parser {
         Lexeme block = block();
         ifKeyWord.AddChild(expression);
         ifKeyWord.AddChild(block);
+
+        while (check(ELSEIF)) {
+            consume(ELSEIF);
+            consume(OPAREN);
+            Lexeme elseIfExpression = expression();
+            consume(CPAREN);
+            Lexeme elseIfBlock = block();
+            ifKeyWord.AddChild(elseIfExpression);
+            ifKeyWord.AddChild(elseIfBlock);
+        }
+
+        if (check(ELSE)) {
+            consume(ELSE);
+            Lexeme elseBlock = block();
+            ifKeyWord.AddChild(elseBlock);
+        }
+
         return ifKeyWord;
-
-    }
-
-    private Lexeme elseIfConditional() {
-        Lexeme elseIfKeyWord = consume(ELSEIF);
-        consume(OPAREN);
-        Lexeme expression = expression();
-        consume(CPAREN);
-        Lexeme block = block();
-        elseIfKeyWord.AddChild(expression);
-        elseIfKeyWord.AddChild(block);
-        return elseIfKeyWord;
-    }
-
-    private Lexeme elseConditional() {
-        Lexeme elseKeyWord = consume(ELSE);
-        consume(OPAREN);
-        Lexeme expression = expression();
-        consume(CPAREN);
-        Lexeme block = block();
-        elseKeyWord.AddChild(expression);
-        elseKeyWord.AddChild(block);
-        return elseKeyWord;
     }
 
     private Lexeme collection() {
