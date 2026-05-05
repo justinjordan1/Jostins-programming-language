@@ -1,6 +1,6 @@
 # Welcome to the C10H15N language!
 
-This readme is so cringe but its part of the culture thats what happens when youre 16
+[update] - This readme is so cringe but its part of the culture thats what happens when youre 16
 
 
 
