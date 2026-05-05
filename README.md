@@ -1,5 +1,9 @@
 # Welcome to the C10H15N language!
 
+This readme is so cringe but its part of the culture thats what happens when youre 16
+
+
+
 Created in Spring 2023 by Jostin
 _____
 src.C10H15N is a language whos primary purpose (at least at the present moment) is to create "math explainers", in other
