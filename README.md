@@ -1,9 +1,7 @@
 # C10H15N
 
 
-[update] - This readme is so cringe but its part of the culture thats what happens when youre 16
-
-
+The name is cringe but I was 16 what are you gonna do 
 
 Created in Spring 2023 by Jostin
 _____
@@ -388,7 +386,7 @@ interger dos george string char matrix object
 
 ---
 
-## Gotchas
+## typos are intentional
 
 `interger` and `indefinitlypreform` are spelled exactly like that.
 
