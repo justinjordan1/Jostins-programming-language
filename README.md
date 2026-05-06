@@ -1,6 +1,6 @@
 # C10H15N
 
-<<<<<<< HEAD
+
 [update] - This readme is so cringe but its part of the culture thats what happens when youre 16
 
 
