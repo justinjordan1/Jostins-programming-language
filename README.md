@@ -1,5 +1,6 @@
-# Welcome to the C10H15N language!
+# C10H15N
 
+<<<<<<< HEAD
 [update] - This readme is so cringe but its part of the culture thats what happens when youre 16
 
 
@@ -10,149 +11,387 @@ src.C10H15N is a language whos primary purpose (at least at the present moment) 
 words, animations that visually display mathematical concepts. One might say "why make a whole language for this" to
 which I say, uh... next question.
 ____
+=======
+Created in Spring 2023 by Jostin.
+>>>>>>> d337ca1 (grammar foreach)
 
-#### Special features I hope to implement
+C10H15N is a tiny programming language for making math explainers, matrix experiments, and weird little ray-traced point-cloud animations. Why make a whole language for this? next question.
 
-1. Robust linear algebra tools, maybe even a seperate matricies data structure (although it feels kind of redundant).
-   Support for multiplication/division, addition/subtracting, rotation, finding inverses/determinants, etc.
-2. Support for defining a list of numbers with arithmetic or geometric sequences. `someArray int[] = [0,1,2...10];`
-   might make an integer array of 11 numbers from 1-11.
-3. Support for like... graphics in general? just the ability to draw things to a screen.
-4. Maybe building a graphing calculator on top of the previous feature.
+Files usually use `.mexplainerth`.
 
-___
+---
 
-## Syntax and stuff
+## Run It
 
-Statically typed, just in case I want to build a compiler over the summer block comments are supported.`ç` starts
-one,`ø` ends one. (key combos are option c and o respectively)
+From the repo root:
 
-### Variable Declarations
-
-_____
-
-- initialization  `var IDENTIFIERLIST type = expression;`
-- Declaration `var IDENTIFIERLIST type;`
-- Assignment `IDENTIFIER = expression`
-
-### Types
-
-| Syntax    | Description |
-|-----------|------------|
-| Boolean   | `George`   |
-| Interger  | `int`      |
-| String    | `String`   |
-| Charector | `char`     |
-| Double    | `dos`      |
-
-____
-
-### Functions
-
-- Declaration `functionName: returnType(p1,p2...etc) returnType {}`
-- The absence of a return statement will be handled by returning the last line of the function. To return `void`, do
-  exactly that
-
-___
-
-### Looping
-
-___
-
-##### while loops
-
-- `while (condition/expression) {} ` regular while loop
-- `indefinitleyPreform {}` Infinite while loop
-- `whileThisIsBasicllyTrue (condition/expression) %error {}` will work with ints and strings
-
-##### for loops
-
-- `foreach (var ∆ vars) {} `
-- `for (variable initialization; expression)¬+ {}` for loop
-
-##### Conditionals
-
-standard if, else, elseif
-
+```bash
+javac -d out/classes $(find src -name '*.java')
+java -cp out/classes src.C10H15N testInput/VarTest.mexplainerth
 ```
-if conditional {
-} elseif conditional {
-} else conditional {
+
+Run the ray tracer / GIF thing:
+
+```bash
+java -cp out/classes src.C10H15N testInput/metalRayTracer.mexplainerth
+```
+
+That writes `photoreal_spin.gif` when it finishes.
+
+---
+
+## Program Shape
+
+Most plain statements end with `;`. Blocks use `{ ... }`.
+
+```mexplainerth
+var x interger = 10;
+x = x + 1;
+return x;
+```
+
+Block comments:
+
+```mexplainerth
+ç
+comment goes here
+ø
+```
+
+---
+
+## Values And Types
+
+```mexplainerth
+10
+3.14
+"jostin"
+true
+false
+```
+
+| Type | Meaning |
+|---|---|
+| `interger` | integer |
+| `dos` | decimal / double |
+| `george` | boolean |
+| `string` | string |
+| `char` | character keyword |
+| `matrix` | matrix value |
+| `object` | class instance / native object |
+
+The language is statically typed-ish. The spelling is part of the artifact.
+
+---
+
+## Variables
+
+```mexplainerth
+var x interger = 10;
+var y dos = 3.14;
+var name string = "jostin";
+var ready george = true;
+var a,b interger = 0;
+
+x = x + 1;
+```
+
+Variable declarations currently include an assignment. Assignments can update variables, object fields, and matrix cells.
+
+---
+
+## Functions
+
+```mexplainerth
+square : dos(interger x) {
+    return x î 2;
+}
+
+return square(9);
+```
+
+Multiple parameters work:
+
+```mexplainerth
+add : interger(interger a, interger b) {
+    return a + b;
 }
 ```
 
-### Operaters
+Empty parameter lists work too:
 
-| Operaters (these will also work with all matricies, unless theres an asterisk)                                                           | symbol    |
-|------------------------------------------------------------------------------------------------------------------------------------------|-----------|
-| sum                                                                                                                                      | +         |
-| multiply (cross product)                                                                                                                 | *         |
-| divide                                                                                                                                   | /         |
-| subtract                                                                                                                                 | -         |
-| exponentiate                                                                                                                             | î         |
-| inverse                                                                                                                                  | í         | 
-| modulus                                                                                                                                  | %         |
-| dot product                                                                                                                              | ˚         |
-| equal to                                                                                                                                 | ==        |
-| unequal to                                                                                                                               | =/=       |
-| All standard comparison operands*                                                                                                        | <,>,<=,>= |
-| standard boolean operations, but when used on collections theyre interpreted as set notation (if it makes sense). ex`&&` is intersection | &, !, OR  |
-| incrementors and decrementors*                                                                                                           | ++,--     |
+```mexplainerth
+meaning : interger() {
+    return 42;
+}
+```
 
-----
+---
 
-### Collections
+## Classes And Objects
 
-Declarations /initialization
+```mexplainerth
+class Point {
+    var x interger = 0;
+    var y interger = 0;
 
-- `collection name int[] = 1,2,3,4;`
-- `collection name int[4];`
-- `collection linkedList LinkedList<Integer]<<>> = << 1, 2, 3, 4, 5 >> `
+    init : interger(interger startX, interger startY) {
+        this.x = startX;
+        this.y = startY;
+        return 0;
+    }
 
-- `collection matrix int[][] = [[1, 2, 3]\[4, 5, 6]\ [7, 8, 9]]`
-- `collection name int[5]`
-- `collection name int<<>>`
-- `collection name int[[]] = NUMBER'NUMBER`
+    move : interger(interger dx, interger dy) {
+        x = x + dx;
+        y = y + dy;
+        return x + y;
+    }
+}
 
-Getter
+var p object = Point(3, 4);
+p.move(10, 20);
+return p.x + p.y;
+```
 
-- ` GET name<0>, GET name[0], GET name[[0,0,0]]`
+Inside methods, fields can be accessed as `this.x` or bare `x`.
 
-*Matrix Syntax*
+---
 
-Declaration -`name matrix = 2x2;`
+## Conditionals
 
-- `name matrix = [1,2\3,4];`
+```mexplainerth
+if (x < 10) {
+    x = 10;
+} elseif (x == 20) {
+    x = 21;
+} else {
+    x = 0;
+}
+```
 
-Getter
+---
 
-- `name matrix[0,0]`
+## Loops
 
-----
+For loops:
 
-### Special functions
+```mexplainerth
+for (var i interger = 0; i < 10) ¬+ {
+    print(i);
+}
+```
 
-All the matrix stuff as mentioned before. Print `print()`
-Create a canvas `canvas (rgb) size(integer,integer)` (also creates a matrix/2d array of the canvas)
-You manipulate the canvas by changing the rgb values in the 2darray
+Use `¬-` to count down:
 
-Maybe support for standard function LateX function notation, and a graphing calculator built on top of the canvas stuff.
+```mexplainerth
+for (var i interger = 10; i > 0) ¬- {
+    print(i);
+}
+```
 
-### Keywords Enumeration
+While loops:
 
-WHILE, INDEFINITELYPERFORM, WHILETHISISBASICALLYTRUE, FOR, FOREACH, GEORGE, INTERGER, STRING, MATRIX, CHAR, DOS, GET,
-COLLECTION
+```mexplainerth
+while (x < 10) {
+    x = x + 1;
+}
+```
 
+Infinite loop:
 
+```mexplainerth
+indefinitlypreform {
+    break;
+}
+```
 
+Fuzzy loop:
 
+```mexplainerth
+whilethisisbasicallytrue (counter < target) 10% {
+    counter = counter + 1;
+}
+```
 
+Foreach loops:
 
+```mexplainerth
+foreach (value ∆ values) {
+    print(value);
+}
+```
 
+`break;` exits loops.
 
+---
 
+## Operators
 
+| Operation | Symbol |
+|---|---|
+| add | `+` |
+| subtract | `-` |
+| multiply | `*` |
+| divide | `/` |
+| exponent | `î` |
+| inverse | `í` |
+| modulo | `%%` |
+| dot product | `˚` |
+| equal | `==` |
+| comparisons | `<`, `>`, `<=`, `>=` |
+| boolean and/or/not | `&`, `|`, `!` |
 
+Matrix operations use the same arithmetic operators where it makes sense.
 
+---
 
+## Collections
 
+Matrices are the useful collection right now.
+
+```mexplainerth
+collection point matrix[[]] = [[1]\[2]\[3]];
+collection scratch matrix[[]] = 200`100;
+```
+
+Arrays and linked lists have parser/evaluator support, but they are rougher than matrices:
+
+```mexplainerth
+collection nums interger[] = [1,2,3];
+collection empty interger[10];
+collection list interger<<>> = <<1,2,3>>;
+```
+
+Matrix indexing is the reliable path right now; array/list indexing still needs love.
+
+---
+
+## Matrices
+
+Literal matrix:
+
+```mexplainerth
+collection a matrix[[]] = [[1,2,3]\[4,5,6]];
+collection b matrix[[]] = [[7,8]\[9,10]\[11,12]];
+collection product matrix[[]] = a * b;
+```
+
+Sized matrix:
+
+```mexplainerth
+var width interger = 200;
+var height interger = 200;
+collection zBuffer matrix[[]] = width`height;
+```
+
+Getter and setter:
+
+```mexplainerth
+zBuffer[[y,x]] = 10000.0;
+var depth dos = get zBuffer[[y,x]];
+```
+
+Vector helper style:
+
+```mexplainerth
+vec3 : matrix(dos x, dos y, dos z) {
+    return [[x]\[y]\[z]];
+}
+```
+
+Dot product returns a `1x1` matrix, so grab the cell:
+
+```mexplainerth
+dot : dos(matrix a, matrix b) {
+    collection d matrix[[]] = a ˚ b;
+    return get d[[0,0]];
+}
+```
+
+---
+
+## Canvas And GIFs
+
+Create a canvas:
+
+```mexplainerth
+var screen object = Canvas();
+var big object = Canvas(600, 400, 1200, 800);
+```
+
+The first two numbers are the pixel grid. The last two are the window size.
+
+Draw pixels:
+
+```mexplainerth
+screen.setPixel(x, y, 255, 128, 0);
+```
+
+Other canvas methods:
+
+```mexplainerth
+screen.setGridSize(200, 200);
+screen.setWindowSize(800, 800);
+screen.captureFrame();
+screen.collapse("spin.gif", 4);
+screen.exportPPM("frame.ppm");
+```
+
+`collapse` turns captured frames into a GIF. The second argument is the output scale factor.
+
+---
+
+## Built-Ins
+
+```mexplainerth
+print("hello");
+random();
+random(-1.0, 1.0);
+sin(angle);
+cos(angle);
+Canvas();
+Canvas(width, height);
+Canvas(width, height, windowWidth, windowHeight);
+```
+
+`print` writes its arguments directly, without adding a newline.
+
+---
+
+## Keywords
+
+```text
+var return collection class matrixsize
+if elseif else
+while for foreach break indefinitlypreform whilethisisbasicallytrue
+get true false
+interger dos george string char matrix object
+```
+
+---
+
+## Samples
+
+| File | What it is |
+|---|---|
+| `testInput/VarTest.mexplainerth` | variables |
+| `testInput/functionTest.mexplainerth` | functions |
+| `testInput/conditionalTester.mexplainerth` | if / elseif / else |
+| `testInput/LOOPTest.mexplainerth` | loops |
+| `testInput/foreachTest.mexplainerth` | foreach over collections and objects |
+| `testInput/matrixMath.mexplainerth` | matrix multiplication |
+| `testInput/matrixDynamicIndex.mexplainerth` | matrix indexing with variables |
+| `testInput/classTest.mexplainerth` | classes and methods |
+| `testInput/canvasTest.mexplainerth` | drawing to a canvas |
+| `testInput/rayTracer.mexplainerth` | old ASCII ray tracer |
+| `testInput/metalRayTracer.mexplainerth` | path-traced point-cloud GIF monster |
+
+---
+
+## Gotchas
+
+`interger` and `indefinitlypreform` are spelled exactly like that.
+
+`%` belongs to `whilethisisbasicallytrue`; use `%%` for modulo.
+
+`=/=` appears in older grammar notes, but the lexer does not currently recognize it. Use `!(a == b)` for now.

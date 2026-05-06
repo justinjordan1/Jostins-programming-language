@@ -57,6 +57,9 @@ public class Evaluator<Parsing> {
                     if (child.getType() == Types.returnStatement) {
                         return result;
                     }
+                    if (isBreak(result)) {
+                        return result;
+                    }
                     if (result != null) {
                         lastResult = result;
                     }
@@ -98,6 +101,8 @@ public class Evaluator<Parsing> {
                 return evaluateWhileLoop(statement, env);
             case foorLoopBody:
                 return evaluateForLoop(statement, env);
+            case forEachBody:
+                return evaluateForEach(statement, env);
             case whilePercent:
                 return evaluateWhileThisIsBasicallyTrue(statement.getChild(0), env);
             case whileSortOfBody:
@@ -769,6 +774,31 @@ public class Evaluator<Parsing> {
         return null;
     }
 
+    public Lexeme evaluateForEach(Lexeme forEach, Environment env) {
+        Lexeme itemIdentifier = forEach.getChild(1);
+        Lexeme collectionIdentifier = forEach.getChild(3);
+        Lexeme block = forEach.getChild(4);
+        Lexeme collection = resolveValue(env.lookup(collectionIdentifier), env);
+        ArrayList<Lexeme> items = foreachItems(collection, lineOf(collectionIdentifier));
+        Lexeme lastResult = null;
+
+        for (Lexeme item : items) {
+            Environment loopEnv = new Environment(env);
+            loopEnv.setLocal(itemIdentifier, item);
+            Lexeme result = evaluateBlock(block, loopEnv);
+
+            if (isBreak(result)) {
+                break;
+            }
+
+            if (result != null) {
+                lastResult = result;
+            }
+        }
+
+        return lastResult;
+    }
+
     public Lexeme evaluateIndefinitelyPerform(Lexeme indefinitelyPerformLoop, Environment env) {
         Lexeme block = indefinitelyPerformLoop.getChild(1);
 
@@ -817,7 +847,7 @@ public class Evaluator<Parsing> {
 
         for (Lexeme expression : expressionList.getChildren()) {
             Lexeme value = resolveValue(evaluateExpression(expression, env), env);
-            array.add(value.getValue());
+            array.add(value);
         }
 
         return new Lexeme(Types.array, lineOf(arrayNode), array);
@@ -829,10 +859,52 @@ public class Evaluator<Parsing> {
 
         for (Lexeme expression : expressionList.getChildren()) {
             Lexeme value = resolveValue(evaluateExpression(expression, env), env);
-            linkedList.add(value.getValue());
+            linkedList.add(value);
         }
 
         return new Lexeme(Types.linkedList, lineOf(linkedListNode), linkedList);
+    }
+
+    private ArrayList<Lexeme> foreachItems(Lexeme collection, int line) {
+        return switch (collection.getType()) {
+            case matrix -> matrixItems(collection.getMatrixValue(), line);
+            case array, linkedList -> listItems(collection, line);
+            default -> throw new RuntimeException("foreach requires a collection, found " + collection.getType());
+        };
+    }
+
+    private ArrayList<Lexeme> listItems(Lexeme collection, int line) {
+        ArrayList<Lexeme> items = new ArrayList<>();
+        ArrayList<Object> list = collection.getArrayListValue();
+
+        if (list != null) {
+            for (Object item : list) {
+                items.add(collectionItem(item, line));
+            }
+            return items;
+        }
+
+        Object[] array = collection.getArrayValue();
+        if (array != null) {
+            for (Object item : array) {
+                items.add(collectionItem(item, line));
+            }
+            return items;
+        }
+
+        throw new RuntimeException("Collection has no iterable storage");
+    }
+
+    private ArrayList<Lexeme> matrixItems(Object[][] matrix, int line) {
+        ArrayList<Lexeme> items = new ArrayList<>();
+
+        for (Object[] row : matrix) {
+            for (Object cell : row) {
+                items.add(collectionItem(cell, line));
+            }
+        }
+
+        return items;
     }
 
     private Lexeme evaluateMatrix(Lexeme matrixNode, Environment env) {
@@ -1101,28 +1173,46 @@ public class Evaluator<Parsing> {
         return true;
     }
 
-    private Lexeme matrixCell(Object cell, int line) {
-        if (cell == null) {
-            throw new RuntimeException("Matrix cell is empty");
+    private Lexeme collectionItem(Object item, int line) {
+        if (item == null) {
+            throw new RuntimeException("Collection item is empty");
         }
 
-        if (cell instanceof Lexeme lexeme) {
+        if (item instanceof Lexeme lexeme) {
             return lexeme;
         }
 
-        if (cell instanceof Integer integer) {
+        if (item instanceof Integer integer) {
             return new Lexeme(Types.INTERGER, line, integer);
         }
 
-        if (cell instanceof Double doubleValue) {
+        if (item instanceof Double doubleValue) {
             return new Lexeme(Types.DOS, line, doubleValue);
         }
 
-        if (cell instanceof Number number) {
+        if (item instanceof Boolean booleanValue) {
+            return new Lexeme(Types.GEORGE, line, booleanValue);
+        }
+
+        if (item instanceof String stringValue) {
+            return new Lexeme(Types.STRING, line, stringValue);
+        }
+
+        if (item instanceof Number number) {
             return new Lexeme(Types.DOS, line, number.doubleValue());
         }
 
-        throw new RuntimeException("Matrix cell is not numeric: " + cell);
+        if (item instanceof Environment objectEnvironment) {
+            return new Lexeme(Types.OBJECT, line, objectEnvironment);
+        }
+
+        Lexeme object = new Lexeme(Types.OBJECT, line, new Environment(null, new ArrayList<>()));
+        object.setNativeValue(item);
+        return object;
+    }
+
+    private Lexeme matrixCell(Object cell, int line) {
+        return collectionItem(cell, line);
     }
 
     private boolean isVector(Object[][] matrix) {

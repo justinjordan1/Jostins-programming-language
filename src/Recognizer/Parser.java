@@ -489,6 +489,7 @@ public class Parser {
         Lexeme identifier = consume(IDENTIFIER);
         Lexeme forEachDelta = consume(FOREACH_DELTA);
         Lexeme identifierCollection = consume(IDENTIFIER);
+        consume(CPAREN);
         Lexeme block = block();
         Lexeme forEachBody = new Lexeme(Types.forEachBody);
         forEachBody.AddChild(foreach);

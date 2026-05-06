@@ -195,7 +195,7 @@ public final class Lexeme {
             case GEORGE -> booleanValue;
             case STRING -> stringValue;
             case OBJECT -> nativeValue == null ? objectEnvironment : nativeValue;
-            case array -> arrayValue;
+            case array -> arrayValue == null ? arrayListValue : arrayValue;
             case linkedList -> arrayListValue;
             case matrix -> matrixValue;
             default -> throw new IllegalStateException("No value associated with this Lexeme type: " + type);
@@ -237,6 +237,10 @@ public final class Lexeme {
 
     public Object[] getArrayValue() {
         return arrayValue;
+    }
+
+    public ArrayList<Object> getArrayListValue() {
+        return arrayListValue;
     }
 
     public void setArrayValue(Object[] arrayValue) {
