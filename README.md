@@ -11,7 +11,7 @@ which I say, uh... next question.
 ____
 =======
 Created in Spring 2023 by Jostin.
->>>>>>> d337ca1 (grammar foreach)
+
 
 C10H15N is a tiny programming language for making math explainers, matrix experiments, and weird little ray-traced point-cloud animations. Why make a whole language for this? next question.
 
