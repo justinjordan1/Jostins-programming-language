@@ -1,0 +1,55 @@
+ç
+  ASCII Ray Tracer  RAGHHH
+ø
+
+var width interger = 40;
+var height interger = 20;
+
+collection sphereCenter matrix[[]] = 2`2;
+sphereCenter[[0,0]] = 20;
+sphereCenter[[0,1]] = 10;
+
+var radiusSq interger = 36;
+
+
+
+for (var y interger = 0; y < height) ¬+ {
+
+    for (var x interger = 0; x < width) ¬+ {
+
+
+        var dx interger = x - 20;
+        var dy interger = (y - 10) * 1.8;
+        var distSq interger = (dx * dx) + (dy * dy);
+
+        if (distSq < radiusSq) {
+
+            var dot interger = (dx * 1) + (dy * -1);
+
+
+            if (dot < -3) {
+                print("@");
+            } elseif (dot < -1) {
+                print("%");
+            } elseif (dot < 2) {
+                print("#");
+            } elseif (dot < 4) {
+                print("*");
+            } elseif (dot < 6) {
+                print("+");
+            } else {
+                print("=");
+            }
+
+        } else {
+
+            print(".");
+        }
+    }
+
+
+    print("
+");
+}
+
+return 0;

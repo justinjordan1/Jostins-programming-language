@@ -6,4 +6,4 @@ oneEightyrotationMatrix[[1,1]] = 0;
 
 collection point interger[[]] = [[1]\[1]];
 
-collection rotatedPoint interger[[]] = point * oneEightyrotationMatrix;
+collection rotatedPoint interger[[]] = oneEightyrotationMatrix * point;

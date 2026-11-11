@@ -1,1 +1,9 @@
-myvar
+var myVar interger = 0;
+
+if (1 < 2) {
+    myVar = 1;
+} else {
+    myVar = 2;
+}
+
+return myVar;

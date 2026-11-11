@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.claude/.claude.iml" filepath="$PROJECT_DIR$/.claude/.claude.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Jostins-programming-language.iml" filepath="$PROJECT_DIR$/Jostins-programming-language.iml" />
+    </modules>
+  </component>
+</project>

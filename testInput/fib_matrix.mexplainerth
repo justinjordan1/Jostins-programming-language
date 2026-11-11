@@ -1,21 +1,13 @@
-ç
-  The Jostin Matrix Fibonacci Calculator
-  (Manual Assignment Version to bypass Parser Bug)
-ø
-
 var n, i interger = 0;
 
-ç Declare 2x2 matrices using the size syntax (Col ` Row) ø
 collection fibMatrix matrix[[]] = 2`2;
 collection result matrix[[]] = 2`2;
 
-ç Manually fill fibMatrix [[1, 1] \ [1, 0]] ø
 fibMatrix[[0,0]] = 1;
 fibMatrix[[0,1]] = 1;
 fibMatrix[[1,0]] = 1;
 fibMatrix[[1,1]] = 0;
 
-ç Manually fill result (Identity Matrix) [[1, 0] \ [0, 1]] ø
 result[[0,0]] = 1;
 result[[0,1]] = 0;
 result[[1,0]] = 0;
@@ -24,7 +16,6 @@ result[[1,1]] = 1;
 var target interger = 10;
 var counter interger = 0;
 
-ç Run the fuzzy loop ø
 whilethisisbasicallytrue (counter < target) 10% {
 
     result = result * fibMatrix;

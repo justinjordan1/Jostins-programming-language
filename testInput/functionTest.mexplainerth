@@ -1,14 +1,10 @@
 square : dos(interger x) {
-    var myVar dos = x î 2;
-
+    return x î 2;
 }
-square(3);
 
 fourthPower : dos(interger x) {
-    var value interger = 1.1
-    square : dos(interger x) {
-
-    }
-
+    var squared dos = square(x);
+    return squared î 2;
 }
 
+return fourthPower(3);

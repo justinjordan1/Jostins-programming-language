@@ -1,143 +1,206 @@
-
 program ::= statementList
 
-statementList ::= statement+
+statementList ::= { statement }
 
-statement ::= varActivities ";"
-            | conditional ";"
-            | functionDefinition ";"
-            | loop ";"
+statement ::= varInitialization
+            | varAssignment
+            | fieldAssignment
+            | functionDefinition
+            | functionCallStatement
+            | methodCallStatement
+            | matrixAssignment
+            | listAssignment
+            | conditional
+            | whileLoop
+            | forLoop
+            | foreachLoop
+            | indefinitelyPerformLoop
+            | fuzzyWhileLoop
             | block
-            | returnStatement ";"
-            | "break" ";"
-            | collectionActivities ";"
+            | returnStatement
+            | breakStatement
+            | classDefinition
+            | collectionInitialization
+            | collectionGetter
 
-block ::= "{" statement "}"
+block ::= "{" statementList "}"
 
-varActivities ::= varInitialization | varDeclaration | varAssignment | unaryVarAssignment
+comment ::= "ç" { commentCharacter } "ø"
 
-varInitialization ::= "var" varIdentifierList type "=" expression
+type ::= "george"
+       | "interger"
+       | "dos"
+       | "string"
+       | "char"
+       | "matrix"
+       | "object"
 
-varIdentifierList ::= IDENTIFIER
-                    | IDENTIFIER "," varIdentifierList
+varInitialization ::= "var" identifierList type "=" expression ";"
 
-varDeclaration ::= "var" IDENTIFIER type
+identifierList ::= IDENTIFIER { "," IDENTIFIER }
 
-varAssignment ::= IDENTIFER "=" expression
+varAssignment ::= IDENTIFIER "=" expression ";"
 
-unaryVarAssignment ::= "++" IDENTIFIER | "--" IDENTIFIER
+fieldAssignment ::= IDENTIFIER "." IDENTIFIER "=" expression ";"
 
-primary ::= NUMBER | STRING | IDENTIFIER | booleanLiteral | functionCall | collection | CHAR | parenthesizedExpression
+functionDefinition ::= IDENTIFIER ":" type "(" [ parameterList ] ")" block
 
-booleanLiteral ::= TRUE | FALSE
+parameterList ::= parameter { "," parameter }
 
-type ::= "george" //george bool
-        | "interger" //intentional misspelling
-        | "String"
-        | "Matrix"
-        | "char"
-        | "dos"
+parameter ::= type IDENTIFIER
 
-expression ::= binaryExpression
-                | unaryExpression
-                | parenthesizedExpression
+functionCallStatement ::= functionCall [ ";" ]
 
-parenthesizedExpression ::=  "(" expression ")"
+functionCall ::= IDENTIFIER "(" [ argumentList ] ")"
 
-binaryExpression ::= primary binaryOperator primary
+argumentList ::= expression { "," expression }
 
+classDefinition ::= "class" IDENTIFIER block
 
-binaryOperator ::=  booleanOperator | comparator | simpleMathOperator
+fieldAccess ::= IDENTIFIER "." IDENTIFIER
 
-comparator ::= "==" | "=/=" | "<" | "<=" | ">=" | ">"
+methodCallStatement ::= methodCall ";"
 
-booleanOperator ::= "&" | "|"
+methodCall ::= IDENTIFIER "." IDENTIFIER "(" [ argumentList ] ")"
 
-simpleMathOperator ::= "+" | "-" | "/" | "î" | "%" | "*"
+returnStatement ::= "return" expression ";"
 
-unaryExpression ::= unaryOperator primary
-                | unaryOperator parenthesizedExpression
+breakStatement ::= "break" ";"
 
-unaryOperator ::= "!" | "-" | "í"
+conditional ::= "if" "(" expression ")" block
+                { "elseif" "(" expression ")" block }
+                [ "else" block ]
 
-functionCall ::= IDENTIFIER "(" callParameters?")"
+whileLoop ::= "while" "(" expression ")" block
 
-callParameters ::= callParameter
-                | callParameter "," callParameters
-callParameter ::= expression
+forLoop ::= "for" "(" "var" identifierList type "=" expression ";" expression ")" loopIncrement block
 
-functionDefinition ::= IDENTIFIER ":" "(" parameterList?")" returnType block
+loopIncrement ::= "¬+"
+                | "¬-"
+                | "loopincrementplus"
+                | "loopincrementminus"
 
- parameterList ::= parameter
-                | parameter "," parameterList
+foreachLoop ::= "foreach" "(" IDENTIFIER "∆" IDENTIFIER ")" block
 
-parameter ::= type IDENTIFER
+indefinitelyPerformLoop ::= "indefinitlypreform" block
 
-returnType ::= type | "void"
+fuzzyWhileLoop ::= "whilethisisbasicallytrue" "(" expression ")" number "%" block
 
-returnStatement ::= "return" expression | functionCall
+expression ::= unaryExpression { binaryOperator unaryExpression }
 
-conditional ::= ifStatement ifElseStatement* elseStatement?
+parenthesizedExpression ::= "(" expression ")"
 
+unaryExpression ::= unaryOperator unaryExpression
+                  | primary
 
+unaryOperator ::= "!"
+                | "-"
+                | "í"
 
-ifStatement ::= "if" "("expression")" block
+binaryOperator ::= "+"
+                 | "-"
+                 | "*"
+                 | "/"
+                 | "î"
+                 | "%%"
+                 | "˚"
+                 | "=="
+                 | "<"
+                 | ">"
+                 | "<="
+                 | ">="
+                 | "&"
+                 | "|"
 
-ifElseStatement ::= "ifelse" "("expression")" block
+primary ::= number
+          | STRING
+          | booleanLiteral
+          | identifierExpression
+          | collectionGetter
+          | collectionLiteral
+          | parenthesizedExpression
 
-elseStatement ::= "else" "("expression")" block
+identifierExpression ::= IDENTIFIER [ identifierSuffix ]
 
-// loops
-loop ::= forLoop | whileLoop
-forLoop ::= "for" "(" varInitialization conditional ")" loopIncrement block
-         | "foreach" "("IDENTIFIER "∆" collection")"loopIncrement block
+identifierSuffix ::= "(" [ argumentList ] ")"
+                   | "." IDENTIFIER [ "(" [ argumentList ] ")" ]
 
-loopIncrement ::= "¬+" | "¬-"
+booleanLiteral ::= "true"
+                 | "false"
 
-whileLoop ::= "while "( expression ) block
-          | "indefinetleyPreform"  block
-          | "whileThisIsBasicallyTrue" "("expression")" NUMBER "%" block
+number ::= INTERGER
+         | DOS
 
-collection ::= array | linkedList | matrix
+collectionInitialization ::= "collection" IDENTIFIER type arrayCollectionSuffix ";"
+                           | "collection" IDENTIFIER type linkedListCollectionSuffix ";"
+                           | "collection" IDENTIFIER type matrixCollectionSuffix ";"
 
-expressionList ::= expression
-                | expression "," expressionList
+arrayCollectionSuffix ::= "[]" "=" expression
+                        | "[" INTERGER "]"
 
-collectionActivities ::= collectionInitialization collectionDeclaration collectionAssingment collectionGetters
+linkedListCollectionSuffix ::= "<<>>" [ "=" expression ]
 
-collectionInitialization ::= "collection" IDENTIFER  type"[]" "=" array
-                          | "collection" IDENTIFER type"[]" "=" "[" expressionList "]"
-                          | "collection" IDENTIFIER type"<<>>" "=" "<<" expressionList ">>"
-                          | "collection" IDENTIFER  type"<<>>" "=" linkedList
-                          | "collection" IDENTIFIER type"[[]]"  "=" "[[" expressionList {"\\" expressionList} "]]"
+matrixCollectionSuffix ::= "[[]]" "=" matrixInitializer
 
-collectionDeclaration ::= "collection" IDENTIFIER type"["NUMBER"]"
-                        | "collection"  IDENTIFIER type "<<>>"
-                        |"collection"  IDENTIFIER type"[[]]" "=" NUMBER"`"NUMBER
+matrixInitializer ::= matrixSize
+                    | expression
 
-collectionAssingment ::= IDENTIFIER "=" array
-                       | IDENTIFIER "=" linkedList
-                       | IDENTIFIER "=" matrix
-                       | IDENTIFIER"["NUMBER"]" "=" expression
-                       | IDENTIFIER"<<"NUMBER">>" "=" expression
-                       | IDENTIFIER"<<"+">>" "=" expression //add to the end of a linked list
-                       | IDENTIFIER"<<"+0">>" "=" expression //adds to the front of a linked list
-                       | IDENTIFIER"[["NUMBER "," NUMBER"]]" "=" expression
+matrixSize ::= expression matrixSizeOperator expression
 
-collectionGetters ::= "GET" IDENTIFIER"["NUMBER"]"
-                    | "GET" IDENTIFIER"<<"NUMBER">>"
-                    | "GET" IDENTIFIER"[["NUMBER {"," NUMBER"}]]"
+matrixSizeOperator ::= "`"
+                     | "matrixsize"
 
+collectionLiteral ::= arrayLiteral
+                    | linkedListLiteral
+                    | matrixLiteral
 
+arrayLiteral ::= "[" expressionList "]"
 
-array ::= "[" expression { "," expression } "]"
+linkedListLiteral ::= "<<" expressionList ">>"
 
-linkedList ::= "<<" expression { "," expression } ">>"
+matrixLiteral ::= "[[" expressionList { "]\[" expressionList } "]]"
 
-matrix ::= "[[" expressionList {"\\" expressionList} "]]"
+expressionList ::= expression { "," expression }
 
+matrixAssignment ::= IDENTIFIER "[[" expression "," expression "]]" "=" expression ";"
 
+listAssignment ::= IDENTIFIER "<<" number ">>" "=" expression ";"
+                 | IDENTIFIER "<<+0>>" "=" expression ";"
 
+collectionGetter ::= arrayGetter
+                   | linkedListGetter
+                   | matrixGetter
 
+arrayGetter ::= "get" IDENTIFIER "[" number "]"
 
+linkedListGetter ::= "get" IDENTIFIER "<<" number ">>"
 
+matrixGetter ::= "get" IDENTIFIER "[[" expression "," expression "]]"
+
+IDENTIFIER ::= identifierStart { identifierPart }
+
+identifierStart ::= LETTER
+                  | "_"
+
+identifierPart ::= LETTER
+                 | DIGIT
+                 | "_"
+
+INTERGER ::= DIGIT { DIGIT }
+
+DOS ::= DIGIT { DIGIT } "." DIGIT { DIGIT }
+
+STRING ::= '"' { stringCharacter } '"'
+
+commentCharacter ::= ANY_CHARACTER_EXCEPT_COMMENT_END
+
+stringCharacter ::= ANY_CHARACTER_EXCEPT_QUOTE
+
+LETTER ::= "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i"
+         | "j" | "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r"
+         | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z"
+         | "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I"
+         | "J" | "K" | "L" | "M" | "N" | "O" | "P" | "Q" | "R"
+         | "S" | "T" | "U" | "V" | "W" | "X" | "Y" | "Z"
+
+DIGIT ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"

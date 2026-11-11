@@ -527,8 +527,11 @@ public class CodeGen {
         Lexeme identifier = node.getChild(1);
         Lexeme helper = node.getChild(3);
         if (helper.getType() == Types.collectionHelper && helper.getChildrenSize() == 4) {
-            emit("li a0, " + helper.getChild(3).getIntValue());
-            emit("li a1, " + helper.getChild(1).getIntValue());
+            convert(genExpr(helper.getChild(3)), T.INT, identifier);
+            push(T.INT);
+            convert(genExpr(helper.getChild(1)), T.INT, identifier);
+            emit("mv a1, a0");
+            pop("a0");
             emit("call mat_alloc");
         } else {
             Lexeme expression = helper.getType() == Types.collectionHelper
@@ -545,12 +548,19 @@ public class CodeGen {
         }
         Var matrix = lookup(node.getChild(0));
         if (matrix.type != T.MAT) throw error("'" + node.getChild(0).getStringValue() + "' is not a matrix", node.getChild(0));
-        T type = genExpr(node.getChild(4));
-        convert(type, T.DOS, node.getChild(0));
+        genIndexes(node.getChild(1), node.getChild(2));
+        convert(genExpr(node.getChild(4)), T.DOS, node.getChild(0));
+        pop("a2");
+        pop("a1");
         load(matrix);
-        emit("li a1, " + node.getChild(1).getIntValue());
-        emit("li a2, " + node.getChild(2).getIntValue());
         emit("call mat_set");
+    }
+
+    private void genIndexes(Lexeme row, Lexeme column) {
+        convert(genExpr(row), T.INT, row);
+        push(T.INT);
+        convert(genExpr(column), T.INT, column);
+        push(T.INT);
     }
 
     // ---------- expressions ----------
@@ -589,9 +599,10 @@ public class CodeGen {
                 if (matrix.type != T.MAT || node.getChildrenSize() != 4) {
                     throw error("GET needs a matrix and [[row, column]]", node.getChild(1));
                 }
+                genIndexes(node.getChild(2), node.getChild(3));
+                pop("a2");
+                pop("a1");
                 load(matrix);
-                emit("li a1, " + node.getChild(2).getIntValue());
-                emit("li a2, " + node.getChild(3).getIntValue());
                 emit("call mat_get");
                 return T.DOS;
             }
