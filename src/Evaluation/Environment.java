@@ -77,14 +77,11 @@ public class Environment {
                 }
                 break;
         }
-        // If the value cannot be elevated to the target type, return null
         System.out.println("casting error");
         return null;
     }
 
     public void update(Lexeme identifier, Lexeme newValue) {
-        // Ensure this identifier is defined in this or some parent environment lookup (identifier);
-        // Search this environment and update if found locally
         for (NamedValue namedValue : entries) {
             if (namedValue.getIdentifier().equals(identifier)) {
 
@@ -98,8 +95,6 @@ public class Environment {
                                     " and cannot be assigned a value of type " + providedType,
                             identifier.getLineNumber());
                 namedValue.setValue(newValue);
-                // Whether a value of a valid type was provided or not,
-                // quit looking once we find a match.
                 return;
             } else if (namedValue.getIdentifier().getStringValue().equals(identifier.getStringValue())) {
 
@@ -113,12 +108,9 @@ public class Environment {
                                     " and cannot be assigned a value of type " + providedType,
                             identifier.getLineNumber());
                 namedValue.setValue(newValue);
-                // Whether a value of a valid type was provided or not,
-                // quit looking once we find a match.
                 return;
             }
         }
-        // If no local match is found, try the update in the parent environment
 
         parent.update(identifier, newValue);
     }

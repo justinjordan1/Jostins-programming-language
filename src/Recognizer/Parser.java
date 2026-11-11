@@ -33,7 +33,7 @@ public class Parser {
     }
 
     private boolean checkNext(Types type) {
-        if (nextLexemeIndex > lexemes.size()) return false;
+        if (nextLexemeIndex >= lexemes.size()) return false;
         return lexemes.get(nextLexemeIndex).getType() == type;
     }
 
@@ -55,7 +55,6 @@ public class Parser {
     public Parser(ArrayList<Lexeme> lexemes) {
         this.lexemes = lexemes;
         this.nextLexemeIndex = 0;
-        System.out.println(lexemes);
         advance();
         //program();
 
@@ -132,7 +131,9 @@ public class Parser {
                 return varAsssignment;
             } else if (check(OPAREN)) {
 
-                return functionCall(identifier);
+                Lexeme funcCallNode = functionCall(identifier);
+                if (check(SEMI_COLON)) consume(SEMI_COLON);
+                return funcCallNode;
             } else if (checkNext(OBRACKET)) {
 
                 consume(OBRACKET);
@@ -244,21 +245,11 @@ public class Parser {
             return (whileloop);
 
         } else if (check(INDEFINITELYPERFORM)) {
-            Lexeme indefinitleyPreform = new Lexeme(whileTrue);
-
-            Lexeme whileTrue = indefinitleyPreform();
-
-            Lexeme block = block();
-            whileTrue.AddChild(whileTrue);
-            whileTrue.AddChild(block);
-            return (indefinitleyPreform);
+            return indefinitleyPreform();
         } else if (check(WHILETHISISBASICALLYTRUE)) {
             Lexeme whilePercent = new Lexeme(Types.whilePercent);
-
             Lexeme whileThisIsBasicallyTrue = whileThisIsBasicallyTrue();
-            Lexeme block = block();
             whilePercent.AddChild(whileThisIsBasicallyTrue);
-            whilePercent.AddChild(block);
             return (whilePercent);
         } else if (check(FOR)) {
             return forLoop();
@@ -779,6 +770,11 @@ public class Parser {
 
     private Lexeme primary() {
         Lexeme primary = new Lexeme(Types.primary);
+        if (check(MINUS) || check(MINUS_UNARY)) {
+            Lexeme unary = unaryExpression();
+            primary.AddChild(unary);
+            return primary;
+        }
         if (check(DOS) || check(INTERGER)) {
             Lexeme number = number();
             primary.AddChild(number);
@@ -789,15 +785,20 @@ public class Parser {
             return primary;
         } else if (check(IDENTIFIER)) {
             Lexeme identifier = consume(IDENTIFIER);
+            if (check(OPAREN)) {
+                Lexeme funcCall = functionCall(identifier);
+                primary.AddChild(funcCall);
+                return primary;
+            }
             primary.AddChild(identifier);
             return primary;
         } else if (booleanLiteralPending()) {
             Lexeme booleanLiteral = booleanLiteral();
             primary.AddChild(booleanLiteral);
             return primary;
-        } else if (functionCallPending()) {
-            Lexeme funcCall = functionCall();
-            primary.AddChild(funcCall);
+        } else if (check(OPAREN)) {
+            Lexeme parenthExp = parenthesizedExpression();
+            primary.AddChild(parenthExp);
             return primary;
         } else if (collectionPending()) {
             Lexeme collection = collection();
@@ -806,10 +807,6 @@ public class Parser {
         } else if (check(CHAR)) {
             Lexeme charector = consume(CHAR);
             primary.AddChild(charector);
-            return primary;
-        } else if (check(OPAREN)) {
-            Lexeme parenthExp = parenthesizedExpression();
-            primary.AddChild(parenthExp);
             return primary;
         } else {
             return error("Expected a primary expression.");
@@ -943,64 +940,38 @@ public class Parser {
     }
 
     private Lexeme conditional() {
-        int a = 0;
         if (check(IF)) {
-            a++;
             return ifConditional();
-
-
         }
-        while (check(ELSEIF)) {
-            a++;
-            return elseIfConditional();
-
-        }
-        while (check(ELSE)) {
-            a++;
-            return elseConditional();
-
-        }
-        if (a == 0) {
-            return error("Expected conditional keyword (IF, ELSEIF, or ELSE)");
-        }
-        return error("Expected conditional keyword (IF, ELSEIF, or ELSE)");
+        return error("Expected IF keyword");
     }
 
     private Lexeme ifConditional() {
         Lexeme ifKeyWord = consume(IF);
-
         consume(OPAREN);
-
         Lexeme expression = expression();
-
         consume(CPAREN);
         Lexeme block = block();
         ifKeyWord.AddChild(expression);
         ifKeyWord.AddChild(block);
+
+        while (check(ELSEIF)) {
+            consume(ELSEIF);
+            consume(OPAREN);
+            Lexeme elseIfExpression = expression();
+            consume(CPAREN);
+            Lexeme elseIfBlock = block();
+            ifKeyWord.AddChild(elseIfExpression);
+            ifKeyWord.AddChild(elseIfBlock);
+        }
+
+        if (check(ELSE)) {
+            consume(ELSE);
+            Lexeme elseBlock = block();
+            ifKeyWord.AddChild(elseBlock);
+        }
+
         return ifKeyWord;
-
-    }
-
-    private Lexeme elseIfConditional() {
-        Lexeme elseIfKeyWord = consume(ELSEIF);
-        consume(OPAREN);
-        Lexeme expression = expression();
-        consume(CPAREN);
-        Lexeme block = block();
-        elseIfKeyWord.AddChild(expression);
-        elseIfKeyWord.AddChild(block);
-        return elseIfKeyWord;
-    }
-
-    private Lexeme elseConditional() {
-        Lexeme elseKeyWord = consume(ELSE);
-        consume(OPAREN);
-        Lexeme expression = expression();
-        consume(CPAREN);
-        Lexeme block = block();
-        elseKeyWord.AddChild(expression);
-        elseKeyWord.AddChild(block);
-        return elseKeyWord;
     }
 
     private Lexeme collection() {

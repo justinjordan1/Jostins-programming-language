@@ -126,6 +126,8 @@ public final class Lexeme {
             addvalue(str);
 
             str += "\"" + stringValue + "\"";
+        } else if (type == Types.matrix && matrixValue != null) {
+            str += java.util.Arrays.deepToString(matrixValue);
         }
         return str;
     }
