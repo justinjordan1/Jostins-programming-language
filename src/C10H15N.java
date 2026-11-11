@@ -83,10 +83,14 @@ public class C10H15N {
         System.exit(65);
     }
 
-    private static void printErrors() {
+    public static boolean hasSyntaxErrors() {
+        return !syntaxErrorMessages.isEmpty();
+    }
+
+    public static void printErrors() {
         final String ANSI_YELLOW = "\u001B[33m";
         final String ANSI_RED_BACKGROUND = "\u001B[41m";
-        final String ANSI_RESET = "\u001B[Om";
+        final String ANSI_RESET = "\u001B[0m";
 
         for (String syntaxErrorMessage : syntaxErrorMessages)
             System.out.println(ANSI_YELLOW + syntaxErrorMessage + ANSI_RESET);

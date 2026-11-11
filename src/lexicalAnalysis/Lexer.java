@@ -247,7 +247,24 @@ public class Lexer {
             advance();
         }
 
-        return new Lexeme(Types.STRING, lineNumber, str);
+        return new Lexeme(Types.STRING, lineNumber, unescape(str));
+    }
+
+    private String unescape(String raw) {
+        StringBuilder out = new StringBuilder();
+        for (int i = 0; i < raw.length(); i++) {
+            char c = raw.charAt(i);
+            if (c == '\\' && i + 1 < raw.length()) {
+                char next = raw.charAt(i + 1);
+                if (next == 'n' || next == 't' || next == '\\') {
+                    out.append(next == 'n' ? '\n' : next == 't' ? '\t' : '\\');
+                    i++;
+                    continue;
+                }
+            }
+            out.append(c);
+        }
+        return out.toString();
     }
 
 
@@ -341,6 +358,7 @@ public class Lexer {
         keywords.put("loopincrementminus", Types.LOOPINCREMENTMINUS);
         keywords.put("break", Types.BREAK);
         keywords.put("get", Types.GET);
+        keywords.put("GET", Types.GET);
 
         // Conditionals
         keywords.put("if", Types.IF);

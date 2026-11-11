@@ -1,0 +1,64 @@
+fact : interger(interger n) {
+    if (n < 2) {
+        return 1;
+    }
+    return n * fact(n - 1);
+}
+
+hyp : dos(dos a, dos b) {
+    return (a * a) + (b * b);
+}
+
+square : dos(interger x) {
+    var sq dos = x î 2;
+}
+
+var x interger = 2 + 3 * 4;
+print("2 + 3 * 4 = ", x, "\n");
+print("fact(10) = ", fact(10), "\n");
+print("hyp(3, 4) = ", hyp(3.0, 4.0), "\n");
+print("square(9) = ", square(9), "\n");
+print("2 î 10 = ", 2 î 10, "\n");
+print("17 %% 5 = ", 17 %% 5, "\n");
+print("7 / 2 = ", 7 / 2, " and 7 / 2.0 = ", 7 / 2.0, "\n");
+
+var neg interger = -42;
+print("neg = ", neg, "\n");
+
+var rounded interger = 2.5 * 3;
+print("2.5 * 3 as interger = ", rounded, "\n");
+
+var t george = true;
+var f george = false;
+print("t & f = ", t & f, ", t | f = ", t | f, "\n");
+
+var i interger = 0;
+var total interger = 0;
+while (i < 100) {
+    i = i + 1;
+    if (i %% 2 == 0) {
+        total = total + i;
+    }
+    if (i == 10) {
+        break;
+    }
+}
+print("sum of evens up to 10 = ", total, "\n");
+
+for (var k interger = 3; k > 0)¬- {
+    print(k, " ");
+}
+print("liftoff\n");
+
+collection a interger[[]] = [[1, 2]\[3, 4]];
+collection b interger[[]] = [[0, 1]\[1, 0]];
+print("a * b = ", a * b, "\n");
+print("a + b = ", a + b, "\n");
+print("a - b = ", a - b, "\n");
+print("a[[1,0]] = ", GET a[[1,0]], "\n");
+
+collection rot interger[[]] = 2`2;
+rot[[0,1]] = 0 - 1;
+rot[[1,0]] = 1;
+collection p interger[[]] = [[1]\[1]];
+print("rot * p = ", rot * p, "\n");
