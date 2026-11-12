@@ -16,7 +16,18 @@ import java.util.Set;
 
 public class CodeGen {
 
-    enum T {INT, DOS, BOOL, STR, MAT, OBJ, LIST_INT, LIST_DOS, LIST_BOOL, LIST_STR, LIST_MAT, LIST_OBJ, VOID, UNKNOWN}
+    enum T {
+        INT, DOS, BOOL, STR, MAT, OBJ, FUNC,
+        LIST_INT, LIST_DOS, LIST_BOOL, LIST_STR, LIST_MAT, LIST_OBJ, LIST_FUNC,
+        VOID, UNKNOWN
+    }
+
+    static class Sig {
+        final List<T> params = new ArrayList<>();
+        T ret;
+        Sig[] paramSigs;
+        Sig retSig;
+    }
 
     static boolean isList(T type) {
         return type.name().startsWith("LIST_");
@@ -36,13 +47,18 @@ public class CodeGen {
         int offset;
         Fn owner;
         int fieldSlot = -1;
+        int heapIndex = -1;
         String name;
+        Object sigKey;
+        Sig paramOwner;
+        int paramIndex;
     }
 
     static class Func {
         String label;
         T ret;
         List<T> paramTypes = new ArrayList<>();
+        Sig sig;
     }
 
     static class ClassInfo {
@@ -71,7 +87,12 @@ public class CodeGen {
         final String exitLabel;
         final StringBuilder code = new StringBuilder();
         final Deque<String> breaks = new ArrayDeque<>();
-        int slots = 0;
+        int slots = 2;
+        int heapSlots = 0;
+        boolean heapFrame;
+        boolean hasEnv;
+        Fn parent;
+        Sig sig;
         ClassInfo cls;
         Var thisVar;
 
@@ -91,6 +112,11 @@ public class CodeGen {
     private final Map<String, ClassInfo> classes = new LinkedHashMap<>();
     private final Map<String, Func> knownFuncs = new HashMap<>();
     private final Map<String, T> knownGlobals = new HashMap<>();
+    private final Map<Lexeme, Sig> defSigs = new HashMap<>();
+    private final Map<Object, Sig> varSigs = new HashMap<>();
+    private final Map<String, Sig> fieldSigs = new HashMap<>();
+    private final Set<String> staticClosures = new LinkedHashSet<>();
+    private Sig lastSig;
     private boolean lenient;
     private boolean changed;
 
@@ -122,9 +148,11 @@ public class CodeGen {
         data.setLength(0);
         doubleLabels.clear();
         stringLabels.clear();
+        staticClosures.clear();
         labelCount = 0;
 
         cur = new Fn("main", T.VOID, true, newLabel());
+        cur.heapFrame = mainHasClosures(program);
         globalScope = new Scope(null, cur);
         scope = globalScope;
         if (runtimeLibrary != null) genList(runtimeLibrary);
@@ -164,6 +192,95 @@ public class CodeGen {
         out.append("\n    .data\n");
         out.append(data);
         return out.toString();
+    }
+
+    private boolean containsClosure(Lexeme node) {
+        if (node == null || node.getType() == Types.classDefinition) return false;
+        if (node.getType() == Types.lambda || node.getType() == Types.functionDefinitionActual) return true;
+        for (Lexeme child : node.children) {
+            if (containsClosure(child)) return true;
+        }
+        return false;
+    }
+
+    private boolean mainHasClosures(Lexeme program) {
+        for (Lexeme statement : program.children) {
+            if (statement.getType() == Types.functionDefinitionActual) continue;
+            if (containsClosure(statement)) return true;
+        }
+        return false;
+    }
+
+    private Sig sigOf(Lexeme definition) {
+        Sig sig = defSigs.get(definition);
+        if (sig == null) {
+            sig = new Sig();
+            for (Lexeme parameter : definition.getChild(3).children) {
+                sig.params.add(typeOf(parameter.getChild(0)));
+            }
+            sig.ret = typeOf(definition.getChild(2));
+            sig.paramSigs = new Sig[sig.params.size()];
+            defSigs.put(definition, sig);
+        }
+        return sig;
+    }
+
+    private boolean compatible(Sig a, Sig b, int depth) {
+        if (a == b || a == null || b == null || depth > 8) return true;
+        if (a.ret != b.ret || !a.params.equals(b.params)) return false;
+        if (!compatible(a.retSig, b.retSig, depth + 1)) return false;
+        for (int i = 0; i < a.paramSigs.length; i++) {
+            if (!compatible(a.paramSigs[i], b.paramSigs[i], depth + 1)) return false;
+        }
+        return true;
+    }
+
+    private Sig merge(Sig current, Sig incoming, Lexeme at) {
+        if (incoming == null) return current;
+        if (current == null) {
+            changed = true;
+            return incoming;
+        }
+        if (!lenient && !compatible(current, incoming, 0)) {
+            throw error("this function slot is given two different kinds of function; "
+                    + "the compiler needs each one to hold a single kind", at);
+        }
+        return current;
+    }
+
+    private Sig getSig(Var variable) {
+        if (variable.paramOwner != null) return variable.paramOwner.paramSigs[variable.paramIndex];
+        if (variable.fieldSlot >= 0) return fieldSigs.get(variable.name);
+        if (variable.sigKey != null) return varSigs.get(variable.sigKey);
+        return null;
+    }
+
+    private void learn(Var variable, Sig sig, Lexeme at) {
+        if (sig == null) return;
+        if (variable.paramOwner != null) {
+            Sig[] slots = variable.paramOwner.paramSigs;
+            slots[variable.paramIndex] = merge(slots[variable.paramIndex], sig, at);
+        } else if (variable.fieldSlot >= 0) {
+            fieldSigs.put(variable.name, merge(fieldSigs.get(variable.name), sig, at));
+        } else if (variable.sigKey != null) {
+            varSigs.put(variable.sigKey, merge(varSigs.get(variable.sigKey), sig, at));
+        }
+    }
+
+    private Object sigKeyFor(Lexeme identifier) {
+        if (cur.isMain && scope == globalScope) return "g_" + identifier.getStringValue();
+        return identifier;
+    }
+
+    private void emitClosure(String codeLabel) {
+        emit("li a0, 16");
+        emit("call rt_alloc");
+        emit("la t0, " + codeLabel);
+        emit("sd t0, 0(a0)");
+        if (cur.heapFrame) {
+            emit("ld t0, -32(s0)");
+            emit("sd t0, 8(a0)");
+        }
     }
 
     private boolean keepsResult(Lexeme statement, T type) {
@@ -225,6 +342,18 @@ public class CodeGen {
         if (locals > 0) {
             out.append("    li t0, ").append(locals).append('\n');
             out.append("    sub sp, sp, t0\n");
+        }
+        if (fn.hasEnv) out.append("    sd t6, -24(s0)\n");
+        if (fn.heapFrame) {
+            out.append("    mv t5, a0\n");
+            out.append("    li a0, ").append(8 + 8 * fn.heapSlots).append('\n');
+            out.append("    call rt_alloc\n");
+            out.append("    sd a0, -32(s0)\n");
+            if (fn.hasEnv) {
+                out.append("    ld t0, -24(s0)\n");
+                out.append("    sd t0, 0(a0)\n");
+            }
+            out.append("    mv a0, t5\n");
         }
         out.append(fn.code);
         out.append(fn.exitLabel).append(":\n");
@@ -294,7 +423,7 @@ public class CodeGen {
             case STRING -> T.STR;
             case MATRIX -> T.MAT;
             case OBJECT -> T.OBJ;
-            case FUNCTION -> throw error("function values aren't supported by the compiler; run this one on the interpreter", typeNode);
+            case FUNCTION -> T.FUNC;
             case CHAR -> throw error("char is not supported by the compiler yet", typeNode);
             default -> T.VOID;
         };
@@ -313,14 +442,17 @@ public class CodeGen {
         variable.name = name;
         if (cur.isMain && scope == globalScope) {
             variable.label = "g_" + name;
+            variable.sigKey = variable.label;
             data.append("    .balign 8\n").append(variable.label).append(": .quad 0\n");
             if (type != T.UNKNOWN && knownGlobals.get(name) != type) {
                 knownGlobals.put(name, type);
                 changed = true;
             }
         } else {
-            variable.offset = -(24 + 8 * cur.slots++);
+            variable.sigKey = at;
             variable.owner = cur;
+            if (cur.heapFrame) variable.heapIndex = cur.heapSlots++;
+            else variable.offset = -(24 + 8 * cur.slots++);
         }
         scope.vars.put(name, variable);
         return variable;
@@ -349,21 +481,17 @@ public class CodeGen {
         return variable;
     }
 
-    private Var lookup(Lexeme identifier) {
+    private Var tryLookup(Lexeme identifier) {
         String name = identifier.getStringValue();
         Scope s = scope;
-        for (; s != null && s.owner == cur; s = s.parent) {
+        for (; s != null && !s.owner.isMain; s = s.parent) {
             Var variable = s.vars.get(name);
             if (variable != null) return variable;
         }
         if (cur.cls != null && cur.cls.fields.contains(name)) return fieldVar(name);
         for (; s != null; s = s.parent) {
             Var variable = s.vars.get(name);
-            if (variable == null) continue;
-            if (variable.label == null) {
-                throw error("'" + name + "' is a local of an enclosing function and can't be used here", identifier);
-            }
-            return variable;
+            if (variable != null) return variable;
         }
         T known = knownGlobals.get(name);
         if (known != null) {
@@ -371,10 +499,18 @@ public class CodeGen {
             variable.name = name;
             variable.type = known;
             variable.label = "g_" + name;
+            variable.sigKey = variable.label;
             return variable;
         }
-        if (lenient) return null;
-        throw error("'" + name + "' is undefined", identifier);
+        return null;
+    }
+
+    private Var lookup(Lexeme identifier) {
+        Var variable = tryLookup(identifier);
+        if (variable == null && !lenient) {
+            throw error("'" + identifier.getStringValue() + "' is undefined", identifier);
+        }
+        return variable;
     }
 
     private Func findFunc(String name) {
@@ -391,12 +527,31 @@ public class CodeGen {
 
     private String address(Var variable) {
         if (variable.fieldSlot >= 0) {
-            emit("ld t1, " + cur.thisVar.offset + "(s0)");
+            emit("ld t1, " + address(cur.thisVar));
             return (8 + 8 * variable.fieldSlot) + "(t1)";
         }
         if (variable.label != null) {
             emit("la t0, " + variable.label);
             return "0(t0)";
+        }
+        if (variable.owner != cur) {
+            if (!cur.hasEnv || variable.heapIndex < 0) {
+                throw new RuntimeException("Compile error: '" + variable.name
+                        + "' belongs to an enclosing function that this code can't reach");
+            }
+            emit("ld t1, -24(s0)");
+            for (Fn fn = cur.parent; fn != variable.owner; fn = fn.parent) {
+                if (fn == null || !fn.hasEnv) {
+                    throw new RuntimeException("Compile error: '" + variable.name
+                            + "' belongs to an enclosing function that this code can't reach");
+                }
+                emit("ld t1, 0(t1)");
+            }
+            return (8 + 8 * variable.heapIndex) + "(t1)";
+        }
+        if (variable.heapIndex >= 0) {
+            emit("ld t1, -32(s0)");
+            return (8 + 8 * variable.heapIndex) + "(t1)";
         }
         if (variable.offset < -2048) {
             emit("li t0, " + variable.offset);
@@ -482,6 +637,7 @@ public class CodeGen {
                 Var variable = lookup(node.getChild(0));
                 T type = genExpr(node.getChild(2));
                 if (variable == null) return T.UNKNOWN;
+                if (type == T.FUNC) learn(variable, lastSig, node.getChild(0));
                 if (variable.fieldSlot >= 0 && variable.type == T.UNKNOWN) {
                     recordField(variable.name, type);
                     variable.type = fieldTypes.getOrDefault(variable.name, T.UNKNOWN);
@@ -562,10 +718,14 @@ public class CodeGen {
         T declared = typeOf(node.getChild(2));
         if (declared == T.VOID) throw error("variable needs a type", node.getChild(1));
         T type = genExpr(node.getChild(4));
+        Sig sig = type == T.FUNC ? lastSig : null;
         convert(type, declared, node.getChild(1));
         for (Lexeme identifier : node.getChild(1).children) {
-            store(declare(identifier, declared));
+            Var variable = declare(identifier, declared);
+            if (declared == T.FUNC) learn(variable, sig, identifier);
+            store(variable);
         }
+        if (declared == T.FUNC) lastSig = sig;
         return declared;
     }
 
@@ -574,6 +734,7 @@ public class CodeGen {
         Lexeme member = node.getChild(1);
         String field = member.getStringValue();
         T valueType = genExpr(node.getChild(3));
+        if (valueType == T.FUNC) fieldSigs.put(field, merge(fieldSigs.get(field), lastSig, member));
 
         if ("this".equals(receiver.getStringValue()) && cur.cls != null && cur.cls.fields.add(field)) changed = true;
         recordField(field, valueType);
@@ -643,34 +804,65 @@ public class CodeGen {
     private void genFunctionDef(Lexeme node, ClassInfo owner) {
         Lexeme identifier = node.getChild(0);
         String name = identifier.getStringValue();
-        Lexeme parameters = node.getChild(3);
-
-        Func function = new Func();
-        function.ret = typeOf(node.getChild(2));
-        for (Lexeme parameter : parameters.children) {
-            function.paramTypes.add(typeOf(parameter.getChild(0)));
-        }
 
         if (owner != null) {
-            function.label = "cls_" + owner.name + "__" + name;
+            Func function = makeFunc(node, "cls_" + owner.name + "__" + name);
             Func previous = owner.methods.get(name);
             if (previous == null || !sameSignature(previous, function)) changed = true;
             owner.methods.put(name, function);
-        } else {
-            if (scope.funcs.containsKey(name)) throw error("function '" + name + "' is already defined", identifier);
-            function.label = (cur.isMain ? "fn_" : cur.label + "__") + name;
-            scope.funcs.put(name, function);
-            if (cur.isMain && scope == globalScope) {
-                Func previous = knownFuncs.get(name);
-                if (previous == null || !sameSignature(previous, function)) changed = true;
-                knownFuncs.put(name, function);
-            }
+            compileFunction(node, function, owner, false);
+            return;
         }
+
+        if (cur.isMain && scope == globalScope) {
+            if (scope.funcs.containsKey(name)) throw error("function '" + name + "' is already defined", identifier);
+            Func function = makeFunc(node, "fn_" + name);
+            scope.funcs.put(name, function);
+            Func previous = knownFuncs.get(name);
+            if (previous == null || !sameSignature(previous, function)) changed = true;
+            knownFuncs.put(name, function);
+            compileFunction(node, function, null, false);
+            return;
+        }
+
+        Func function = makeFunc(node, cur.label + "__" + name + "_" + (labelCount++));
+        Var holder = declare(identifier, T.FUNC);
+        learn(holder, function.sig, identifier);
+        compileFunction(node, function, null, true);
+        emitClosure(function.label);
+        store(holder);
+    }
+
+    private Func makeFunc(Lexeme node, String label) {
+        Func function = new Func();
+        function.sig = sigOf(node);
+        function.ret = function.sig.ret;
+        function.paramTypes = function.sig.params;
+        function.label = label;
+        return function;
+    }
+
+    private T genLambda(Lexeme node) {
+        Lexeme definition = node.getChild(0);
+        Func function = makeFunc(definition, cur.label + "__lambda_" + (labelCount++));
+        compileFunction(definition, function, null, true);
+        emitClosure(function.label);
+        lastSig = function.sig;
+        return T.FUNC;
+    }
+
+    private void compileFunction(Lexeme node, Func function, ClassInfo owner, boolean hasEnv) {
+        Lexeme identifier = node.getChild(0);
+        Lexeme parameters = node.getChild(3);
 
         Fn outerFn = cur;
         Scope outerScope = scope;
         cur = new Fn(function.label, function.ret, false, newLabel());
-        cur.cls = owner;
+        cur.parent = outerFn;
+        cur.hasEnv = hasEnv;
+        cur.sig = function.sig;
+        cur.heapFrame = containsClosure(node.getChild(4));
+        cur.cls = owner != null ? owner : hasEnv ? outerFn.cls : null;
         scope = new Scope(outerScope, cur);
 
         int intRegister = 0, floatRegister = 0;
@@ -678,10 +870,15 @@ public class CodeGen {
             cur.thisVar = declareName("this", T.OBJ, identifier);
             emit("sd a0, " + address(cur.thisVar));
             intRegister = 1;
+        } else if (cur.cls != null) {
+            cur.thisVar = outerFn.thisVar;
         }
+        int parameterIndex = 0;
         for (Lexeme parameter : parameters.children) {
             T type = typeOf(parameter.getChild(0));
             Var variable = declare(parameter.getChild(1), type);
+            variable.paramOwner = function.sig;
+            variable.paramIndex = parameterIndex++;
             if (type == T.DOS) {
                 if (floatRegister > 7) throw error("too many dos parameters", identifier);
                 emit("fsd fa" + (floatRegister++) + ", " + address(variable));
@@ -728,6 +925,9 @@ public class CodeGen {
         }
         if (!isVoid) {
             T type = genExpr(expression);
+            if (type == T.FUNC && cur.ret == T.FUNC && cur.sig != null) {
+                cur.sig.retSig = merge(cur.sig.retSig, lastSig, expression);
+            }
             if (cur.ret != T.VOID) convert(type, cur.ret, expression);
         }
         emit("j " + cur.exitLabel);
@@ -792,6 +992,7 @@ public class CodeGen {
 
         scope = new Scope(scope, cur);
         Var item = declare(node.getChild(1), itemType);
+        if (collection != null) item.sigKey = collection.sigKey;
         Var index = declareName(" index", T.INT, collectionName);
         emit("sd zero, " + address(index));
 
@@ -907,8 +1108,13 @@ public class CodeGen {
         emit("li t0, " + items.size());
         emit("sd t0, 0(a0)");
         push(listType);
+        Object key = sigKeyFor(at);
         for (int i = 0; i < items.size(); i++) {
-            convert(genExpr(items.get(i)), elementType, items.get(i));
+            T itemType = genExpr(items.get(i));
+            if (itemType == T.FUNC && elementType == T.FUNC) {
+                varSigs.put(key, merge(varSigs.get(key), lastSig, items.get(i)));
+            }
+            convert(itemType, elementType, items.get(i));
             emit("ld t1, 0(sp)");
             emit("li t2, " + (8 + 8 * i));
             emit("add t1, t1, t2");
@@ -932,6 +1138,7 @@ public class CodeGen {
         emit("slli t1, t1, 3");
         emit("add t1, t1, a0");
         emit(elementType == T.DOS ? "fld fa0, 8(t1)" : "ld a0, 8(t1)");
+        if (elementType == T.FUNC) lastSig = getSig(list);
         return elementType;
     }
 
@@ -984,9 +1191,23 @@ public class CodeGen {
                 emit("la a0, " + stringConst(node.getStringValue()));
                 return T.STR;
             case IDENTIFIER: {
-                Var variable = lookup(node);
-                if (variable == null) return T.UNKNOWN;
+                Var variable = tryLookup(node);
+                if (variable == null) {
+                    Func function = findFunc(node.getStringValue());
+                    if (function != null && function.sig != null) {
+                        if (staticClosures.add(function.label)) {
+                            data.append("    .balign 8\nclo_").append(function.label)
+                                    .append(": .quad ").append(function.label).append(", 0\n");
+                        }
+                        emit("la a0, clo_" + function.label);
+                        lastSig = function.sig;
+                        return T.FUNC;
+                    }
+                    if (lenient) return T.UNKNOWN;
+                    throw error("'" + node.getStringValue() + "' is undefined", node);
+                }
                 load(variable);
+                if (variable.type == T.FUNC) lastSig = getSig(variable);
                 return variable.type;
             }
             case funcCall:
@@ -1005,8 +1226,11 @@ public class CodeGen {
                     throw error("no class ever gives '" + field + "' a value", node.getChild(1));
                 }
                 emit((fieldType == T.DOS ? "fld fa0, " : "ld a0, ") + (8 + 8 * slot(field)) + "(a0)");
+                if (fieldType == T.FUNC) lastSig = fieldSigs.get(field);
                 return fieldType;
             }
+            case lambda:
+                return genLambda(node);
             case matrixGetter: {
                 if (node.getChildrenSize() != 4) throw error("GET needs [[row, column]]", node.getChild(1));
                 Var matrix = lookup(node.getChild(1));
@@ -1029,8 +1253,6 @@ public class CodeGen {
             case array:
             case linkedList:
                 throw error("list literals only work in a collection declaration", node);
-            case lambda:
-                throw error("function values aren't supported by the compiler; run this one on the interpreter", node);
             default:
                 throw error("the compiler doesn't support " + node.getType() + " in expressions yet", node);
         }
@@ -1286,6 +1508,10 @@ public class CodeGen {
             case BOOL -> emit("call print_bool");
             case STR -> emit("call print_str");
             case MAT -> emit("call mat_print");
+            case FUNC -> {
+                emit("la a0, " + stringConst("function"));
+                emit("call print_str");
+            }
             case OBJ -> {
                 emit("ld t0, 0(a0)");
                 emit("slli t0, t0, 3");
@@ -1301,15 +1527,23 @@ public class CodeGen {
     }
 
     private void marshal(List<Lexeme> arguments, List<T> wanted, int firstIntRegister, Lexeme at) {
+        marshal(arguments, wanted, null, firstIntRegister, at);
+    }
+
+    private void marshal(List<Lexeme> arguments, List<T> wanted, Sig sig, int firstIntRegister, Lexeme at) {
         if (arguments.size() != wanted.size()) {
-            throw error("'" + at.getStringValue() + "' expects " + wanted.size()
-                    + " arguments but got " + arguments.size(), at);
+            String name = at.getType() == Types.IDENTIFIER ? "'" + at.getStringValue() + "'" : "this function";
+            throw error(name + " expects " + wanted.size() + " arguments but got " + arguments.size(), at);
         }
         String[] registers = new String[arguments.size()];
         int intRegister = firstIntRegister, floatRegister = 0;
         for (int i = 0; i < arguments.size(); i++) {
             T want = wanted.get(i);
-            convert(genExpr(arguments.get(i)), want, arguments.get(i));
+            T got = genExpr(arguments.get(i));
+            if (got == T.FUNC && want == T.FUNC && sig != null) {
+                sig.paramSigs[i] = merge(sig.paramSigs[i], lastSig, arguments.get(i));
+            }
+            convert(got, want, arguments.get(i));
             push(want);
             registers[i] = want == T.DOS ? "fa" + (floatRegister++) : "a" + (intRegister++);
         }
@@ -1320,11 +1554,12 @@ public class CodeGen {
 
     private T genCall(Lexeme node) {
         Lexeme identifier = node.getChild(0);
+        List<Lexeme> arguments = node.getChild(1).children;
         if (identifier.getType() != Types.IDENTIFIER) {
-            throw error("calling a returned function isn't supported by the compiler; run this one on the interpreter", node);
+            T calleeType = genExpr(identifier);
+            return callValue(calleeType, lastSig, arguments, node);
         }
         String name = identifier.getStringValue();
-        List<Lexeme> arguments = node.getChild(1).children;
 
         switch (name) {
             case "print":
@@ -1358,10 +1593,17 @@ public class CodeGen {
                 break;
         }
 
+        Var holder = tryLookup(identifier);
+        if (holder != null && holder.type == T.FUNC) {
+            load(holder);
+            return callValue(T.FUNC, getSig(holder), arguments, identifier);
+        }
+
         Func function = findFunc(name);
         if (function != null) {
-            marshal(arguments, function.paramTypes, 0, identifier);
+            marshal(arguments, function.paramTypes, function.sig, 0, identifier);
             emit("call " + function.label);
+            if (function.ret == T.FUNC) lastSig = function.sig == null ? null : function.sig.retSig;
             return function.ret;
         }
 
@@ -1374,7 +1616,7 @@ public class CodeGen {
                 return T.OBJ;
             }
             push(T.OBJ);
-            marshal(arguments, init.paramTypes, 1, identifier);
+            marshal(arguments, init.paramTypes, init.sig, 1, identifier);
             emit("ld a0, 0(sp)");
             emit("call " + init.label);
             pop("a0");
@@ -1386,6 +1628,26 @@ public class CodeGen {
             return T.UNKNOWN;
         }
         throw error("function '" + name + "' is undefined", identifier);
+    }
+
+    private T callValue(T calleeType, Sig sig, List<Lexeme> arguments, Lexeme at) {
+        if (calleeType != T.FUNC || sig == null) {
+            if (lenient) {
+                for (Lexeme argument : arguments) genExpr(argument);
+                return T.UNKNOWN;
+            }
+            if (calleeType != T.FUNC) throw error("tried to call something that is not a function", at);
+            throw error("the compiler can't tell what kind of function is called here; "
+                    + "it needs to see a function being stored or passed into this spot", at);
+        }
+        push(T.FUNC);
+        marshal(arguments, sig.params, sig, 0, at);
+        pop("t5");
+        emit("ld t6, 8(t5)");
+        emit("ld t5, 0(t5)");
+        emit("jalr t5");
+        lastSig = sig.retSig;
+        return sig.ret;
     }
 
     private T genMethodCall(Lexeme node) {
@@ -1401,6 +1663,10 @@ public class CodeGen {
         List<ClassInfo> owners = new ArrayList<>();
         for (ClassInfo info : classes.values()) {
             if (info.methods.containsKey(name)) owners.add(info);
+        }
+        if (owners.isEmpty() && fieldTypes.get(name) == T.FUNC) {
+            emit("ld a0, " + (8 + 8 * slot(name)) + "(a0)");
+            return callValue(T.FUNC, fieldSigs.get(name), arguments, method);
         }
         if (owners.isEmpty()) {
             if (CANVAS_METHODS.contains(name)) {
@@ -1424,8 +1690,9 @@ public class CodeGen {
         }
 
         push(T.OBJ);
-        marshal(arguments, first.paramTypes, 1, method);
+        marshal(arguments, first.paramTypes, first.sig, 1, method);
         pop("a0");
+        if (first.ret == T.FUNC) lastSig = first.sig == null ? null : first.sig.retSig;
         if (owners.size() == 1) {
             emit("call " + first.label);
             return first.ret;
