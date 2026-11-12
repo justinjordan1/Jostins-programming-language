@@ -967,7 +967,7 @@ public class Parser {
     }
 
     private boolean booleanLiteralPending() {
-        return (check(TRUE) || check(FALSE));
+        return check(TRUE) || check(FALSE) || (check(GEORGE) && currentLexeme.hasBooleanValue());
     }
 
     private Lexeme booleanLiteral() {

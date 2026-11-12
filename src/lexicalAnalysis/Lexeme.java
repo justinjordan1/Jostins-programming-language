@@ -93,6 +93,10 @@ public final class Lexeme {
         return doubleValue;
     }
 
+    public boolean hasBooleanValue() {
+        return booleanValue != null;
+    }
+
     public boolean getBooleanValue() {
         return booleanValue;
     }
