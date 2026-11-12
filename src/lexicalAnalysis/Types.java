@@ -2,7 +2,7 @@ package src.lexicalAnalysis;
 
 public enum Types {
     //DATA TYPES
-    GEORGE, INTERGER, STRING, MATRIX, CHAR, DOS, OBJECT, TRUE, FALSE,
+    GEORGE, INTERGER, STRING, MATRIX, CHAR, DOS, OBJECT, FUNCTION, TRUE, FALSE,
 
 
     // INITIRALIZATION
@@ -31,7 +31,7 @@ public enum Types {
     varAssignment, arrayAssi, listAssi, MatrixAssi, whileL, whileTrue, whilePercent, matrixGetter, arrylistGetter, arrayGetter, expressionList, varInitialization,
     varIdentifierList, functionDefinitionActual, parameterList, parameter, whileBody, foorLoopBody, forEachBody, indefPreformBody, whileSortOfBody, statementList, block,
     returnStatement, parentheziedExpreission, unaryExpression, binaryExpression, funcCall, primary, collectionInitialization, collectionHelper, booleanLiteral, breakstatement,
-    classDefinition, fieldAccess, fieldAssignment, methodCall,
+    classDefinition, fieldAccess, fieldAssignment, methodCall, lambda,
     array, linkedList, matrix
 
 }

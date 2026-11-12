@@ -330,6 +330,7 @@ public class Lexer {
         keywords.put("char", Types.CHAR);
         keywords.put("dos", Types.DOS);
         keywords.put("object", Types.OBJECT);
+        keywords.put("function", Types.FUNCTION);
         keywords.put("true", Types.TRUE);
         keywords.put("false", Types.FALSE);
 

@@ -294,6 +294,7 @@ public class CodeGen {
             case STRING -> T.STR;
             case MATRIX -> T.MAT;
             case OBJECT -> T.OBJ;
+            case FUNCTION -> throw error("function values aren't supported by the compiler; run this one on the interpreter", typeNode);
             case CHAR -> throw error("char is not supported by the compiler yet", typeNode);
             default -> T.VOID;
         };
@@ -1028,6 +1029,8 @@ public class CodeGen {
             case array:
             case linkedList:
                 throw error("list literals only work in a collection declaration", node);
+            case lambda:
+                throw error("function values aren't supported by the compiler; run this one on the interpreter", node);
             default:
                 throw error("the compiler doesn't support " + node.getType() + " in expressions yet", node);
         }
@@ -1317,6 +1320,9 @@ public class CodeGen {
 
     private T genCall(Lexeme node) {
         Lexeme identifier = node.getChild(0);
+        if (identifier.getType() != Types.IDENTIFIER) {
+            throw error("calling a returned function isn't supported by the compiler; run this one on the interpreter", node);
+        }
         String name = identifier.getStringValue();
         List<Lexeme> arguments = node.getChild(1).children;
 

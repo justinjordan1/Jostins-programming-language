@@ -130,6 +130,9 @@ public class Parser {
             } else if (check(OPAREN)) {
 
                 Lexeme funcCallNode = functionCall(identifier);
+                while (check(OPAREN)) {
+                    funcCallNode = functionCall(funcCallNode);
+                }
                 if (check(SEMI_COLON)) consume(SEMI_COLON);
                 return funcCallNode;
             } else if (checkNext(OBRACKET)) {
@@ -552,6 +555,9 @@ public class Parser {
         } else if (check(OBJECT)) {
             thingToReturn = currentLexeme;
             advance();
+        } else if (check(FUNCTION)) {
+            thingToReturn = currentLexeme;
+            advance();
         } else {
             error("Expected data type");
         }
@@ -825,10 +831,19 @@ public class Parser {
                 return primary;
             } else if (check(OPAREN)) {
                 Lexeme funcCall = functionCall(identifier);
+                while (check(OPAREN)) {
+                    funcCall = functionCall(funcCall);
+                }
                 primary.AddChild(funcCall);
                 return primary;
             }
             primary.AddChild(identifier);
+            return primary;
+        } else if (check(FUNC_DEFINITION)) {
+            Lexeme name = new Lexeme(IDENTIFIER, currentLexeme.getLineNumber(), "lambda");
+            Lexeme anonymous = new Lexeme(Types.lambda);
+            anonymous.AddChild(functionDefinition(name));
+            primary.AddChild(anonymous);
             return primary;
         } else if (booleanLiteralPending()) {
             Lexeme booleanLiteral = booleanLiteral();
@@ -959,7 +974,7 @@ public class Parser {
     private boolean primaryPending() {
 
         return numberPending() || check(STRING) || check(IDENTIFIER) || booleanLiteralPending()
-                || functionCallPending() || collectionPending() || check(GET) || check(CHAR) || parenthesizedExpressionPending();
+                || check(FUNC_DEFINITION) || functionCallPending() || collectionPending() || check(GET) || check(CHAR) || parenthesizedExpressionPending();
     }
 
     private boolean numberPending() {

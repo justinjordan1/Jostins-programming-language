@@ -71,8 +71,10 @@ public class Evaluator<Parsing> {
                 return evalBinaryExpression(statement, env);
             case unaryExpression:
                 return evalUnaryExpression(statement, env);
-            case INTERGER, GEORGE, STRING, DOS, OBJECT:
+            case INTERGER, GEORGE, STRING, DOS, OBJECT, FUNCTION:
                 return statement;
+            case lambda:
+                return makeClosure(statement.getChild(0), env);
             case varAssignment:
                 return evalVarAssignment(statement, env);
             case functionDefinitionActual:
@@ -165,7 +167,8 @@ public class Evaluator<Parsing> {
             case fieldAccess -> evaluateFieldAccess(expression, env);
             case methodCall -> evaluateMethodCall(expression, env);
             case matrixGetter -> evaluateMatrixGetter(expression, env);
-            case INTERGER, GEORGE, STRING, DOS, OBJECT, IDENTIFIER -> expression;
+            case lambda -> makeClosure(expression.getChild(0), env);
+            case INTERGER, GEORGE, STRING, DOS, OBJECT, FUNCTION, IDENTIFIER -> expression;
             default -> throw new RuntimeException("Unsupported expression type: " + expression.getType());
         };
     }
@@ -448,12 +451,17 @@ public class Evaluator<Parsing> {
     }
 
     public Lexeme evaluateFunctionDefinition(Lexeme funcDefActual, Environment env) {
-        funcDefActual.setEnvironment(env);
-
         Lexeme functionName = funcDefActual.getChild(0);
-        env.funcAdd(functionName, funcDefActual);
+        env.funcAdd(functionName, makeClosure(funcDefActual, env));
 
         return functionName;
+    }
+
+    private Lexeme makeClosure(Lexeme funcDefActual, Environment env) {
+        Lexeme closure = new Lexeme(Types.FUNCTION, lineOf(funcDefActual.getChild(0)));
+        closure.AddChild(funcDefActual);
+        closure.setEnvironment(env);
+        return closure;
     }
 
     public Lexeme evaluateClassDefinition(Lexeme classDefinition, Environment env) {
@@ -493,11 +501,17 @@ public class Evaluator<Parsing> {
             return new Lexeme(Types.DOS, functionName.getLineNumber(), Math.cos(val));
         }
 
-        Lexeme funcDefTree = env.lookup(functionName);
-        if (funcDefTree.getType() == Types.classDefinition) {
-            return createObject(funcDefTree, functionCall.getChild(1), env);
+        Lexeme callee = functionName.getType() == Types.IDENTIFIER
+                ? env.lookup(functionName)
+                : resolveValue(evaluateExpression(functionName, env), env);
+        if (callee.getType() == Types.classDefinition) {
+            return createObject(callee, functionCall.getChild(1), env);
+        }
+        if (callee.getType() != Types.FUNCTION) {
+            throw new RuntimeException("Line " + lineOf(functionCall) + ": tried to call something that is not a function");
         }
 
+        Lexeme funcDefTree = callee.getChild(0);
         Lexeme paramList = funcDefTree.getChild(3);
         Lexeme evaluatedArgList = evalArgList(functionCall.getChild(1), env);
 
@@ -507,7 +521,7 @@ public class Evaluator<Parsing> {
                     + evaluatedArgList.getChildrenSize() + " arguments.");
         }
 
-        Environment callEnv = new Environment(env, new ArrayList<>());
+        Environment callEnv = new Environment(callee.getEnvironment(), new ArrayList<>());
 
         for (int i = 0; i < paramList.getChildrenSize(); i++) {
             Lexeme param = paramList.getChild(i);
@@ -596,7 +610,11 @@ public class Evaluator<Parsing> {
         }
 
         Environment objectEnv = receiver.getObjectEnvironment();
-        Lexeme method = objectEnv.lookup(methodName);
+        Lexeme closure = objectEnv.lookup(methodName);
+        if (closure.getType() != Types.FUNCTION) {
+            throw new RuntimeException(methodName.getStringValue() + " is not a method");
+        }
+        Lexeme method = closure.getChild(0);
         Lexeme paramList = method.getChild(3);
         Lexeme evaluatedArgList = evalArgList(argList, env);
 
@@ -606,7 +624,7 @@ public class Evaluator<Parsing> {
                     + evaluatedArgList.getChildrenSize() + " arguments.");
         }
 
-        Environment callEnv = new Environment(objectEnv, new ArrayList<>());
+        Environment callEnv = new Environment(closure.getEnvironment(), new ArrayList<>());
         callEnv.funcAdd(new Lexeme(Types.IDENTIFIER, methodName.getLineNumber(), "this"), receiver);
 
         for (int i = 0; i < paramList.getChildrenSize(); i++) {
@@ -1045,6 +1063,7 @@ public class Evaluator<Parsing> {
                 && value.getType() != Types.array
                 && value.getType() != Types.linkedList
                 && value.getType() != Types.OBJECT
+                && value.getType() != Types.FUNCTION
                 && value.getType() != Types.IDENTIFIER
                 && value.getChildrenSize() == 1) {
             value = value.getChild(0);
@@ -1245,6 +1264,7 @@ public class Evaluator<Parsing> {
             case GEORGE -> Boolean.toString(value.getBooleanValue());
             case matrix -> matrixToString(value.getMatrixValue());
             case OBJECT -> value.getStringValue() == null ? "object" : value.getStringValue();
+            case FUNCTION -> "function";
             default -> value.toString();
         };
     }

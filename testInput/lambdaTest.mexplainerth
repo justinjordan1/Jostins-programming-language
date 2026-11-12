@@ -1,0 +1,101 @@
+makeAdder : function(interger n) {
+    add : interger(interger x) {
+        return x + n;
+    }
+    return add;
+}
+
+var addFive function = makeAdder(5);
+var addTen function = makeAdder(10);
+print("addFive(1) = ", addFive(1), ", addTen(1) = ", addTen(1), "\n");
+print("makeAdder(100)(1) = ", makeAdder(100)(1), "\n");
+
+var double function = : interger(interger x) {
+    return x * 2;
+};
+print("double(21) = ", double(21), "\n");
+
+twice : function(function f) {
+    return : interger(interger x) {
+        return f(f(x));
+    };
+}
+print("twice(double)(5) = ", twice(double)(5), "\n");
+print("twice(twice(double))(1) = ", twice(twice(double))(1), "\n");
+
+compose : function(function f, function g) {
+    return : interger(interger x) {
+        return f(g(x));
+    };
+}
+var addThenDouble function = compose(double, addFive);
+print("compose(double, addFive)(1) = ", addThenDouble(1), "\n");
+
+makeCounter : function() {
+    var count interger = 0;
+    return : interger() {
+        count = count + 1;
+        return count;
+    };
+}
+var tick function = makeCounter();
+var tock function = makeCounter();
+tick();
+tick();
+print("tick() third call = ", tick(), ", tock() first call = ", tock(), "\n");
+
+curry : function(interger a) {
+    return : function(interger b) {
+        return : interger(interger c) {
+            return a * 100 + b * 10 + c;
+        };
+    };
+}
+print("curry(1)(2)(3) = ", curry(1)(2)(3), "\n");
+
+collection steps function[] = [addFive, double, addTen];
+var value interger = 1;
+foreach (step ∆ steps) {
+    value = step(value);
+}
+print("1 through addFive, double, addTen = ", value, "\n");
+
+map : matrix(function f, matrix m) {
+    collection result matrix[[]] = 3`1;
+    for (var i interger = 0; i < 3)¬+ {
+        result[[0,i]] = f(get m[[0,i]]);
+    }
+    return result;
+}
+collection numbers matrix[[]] = [[1, 2, 3]];
+print("map(square, [[1, 2, 3]]) = ", map(: interger(interger x) { return x * x; }, numbers), "\n");
+
+class Button {
+    init : interger(function action) {
+        this.onClick = action;
+        return 0;
+    }
+}
+var button object = Button(: interger(interger x) { return x + 1000; });
+print("button.onClick(1) = ", button.onClick(1), "\n");
+
+fib : interger(interger n) {
+    if (n < 2) {
+        return n;
+    }
+    return fib(n - 1) + fib(n - 2);
+}
+print("fib(15) still recurses = ", fib(15), "\n");
+
+var n interger = 100;
+show : interger() {
+    return n;
+}
+caller : interger() {
+    var n interger = 7;
+    return show();
+}
+print("show() called from caller() sees n = ", caller(), "\n");
+print("printing a function: ", double, "\n");
+
+return 0;

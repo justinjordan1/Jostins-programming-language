@@ -24,6 +24,10 @@ public final class Lexeme {
         definingEnviorment = env;
     }
 
+    public Environment getEnvironment() {
+        return definingEnviorment;
+    }
+
     public Lexeme(Types type) {
         this.type = type;
     }
