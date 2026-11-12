@@ -9,16 +9,21 @@ hyp : dos(dos a, dos b) {
     return (a * a) + (b * b);
 }
 
-square : dos(interger x) {
-    var sq dos = x î 2;
+first : interger(interger n) {
+    return second(n) + 1;
 }
 
-var x interger = 2 + 3 * 4;
-print("2 + 3 * 4 = ", x, "\n");
+second : interger(interger n) {
+    return n * 10;
+}
+
+print("2 + 3 * 4 = ", 2 + 3 * 4, "\n");
 print("fact(10) = ", fact(10), "\n");
 print("hyp(3, 4) = ", hyp(3.0, 4.0), "\n");
-print("square(9) = ", square(9), "\n");
+print("first(4) = ", first(4), "\n");
 print("2 î 10 = ", 2 î 10, "\n");
+print("16.0 î 0.5 = ", 16.0 î 0.5, "\n");
+print("2.0 î -2 = ", 2.0 î -2, "\n");
 print("17 %% 5 = ", 17 %% 5, "\n");
 print("7 / 2 = ", 7 / 2, " and 7 / 2.0 = ", 7 / 2.0, "\n");
 
@@ -28,9 +33,25 @@ print("neg = ", neg, "\n");
 var rounded interger = 2.5 * 3;
 print("2.5 * 3 as interger = ", rounded, "\n");
 
-var t george = true;
-var f george = false;
+var t george = 1 < 2;
+var f george = 2 < 1;
 print("t & f = ", t & f, ", t | f = ", t | f, "\n");
+
+var word string = "hi";
+print("word == hi is ", word == "hi", ", word == yo is ", word == "yo", "\n");
+
+var power dos = 2.0 î 1.5;
+print("2.0 î 1.5 is about 2.8284: ", power > 2.8284 & power < 2.8285, "\n");
+
+var wave dos = sin(0.5);
+print("sin(0.5) is about 0.4794: ", wave > 0.4794 & wave < 0.4795, "\n");
+wave = cos(0.5);
+print("cos(0.5) is about 0.8776: ", wave > 0.8775 & wave < 0.8776, "\n");
+wave = sin(100.0);
+print("sin(100.0) is about -0.5064: ", wave > -0.5065 & wave < -0.5063, "\n");
+
+var dice dos = random(2.0, 3.0);
+print("random(2.0, 3.0) in range: ", dice >= 2.0 & dice < 3.0, "\n");
 
 var i interger = 0;
 var total interger = 0;
@@ -50,15 +71,87 @@ for (var k interger = 3; k > 0)¬- {
 }
 print("liftoff\n");
 
-collection a interger[[]] = [[1, 2]\[3, 4]];
-collection b interger[[]] = [[0, 1]\[1, 0]];
+class Square {
+    var side dos = 0.0;
+
+    init : interger(dos s) {
+        this.side = s;
+        return 0;
+    }
+
+    area : dos() {
+        return side * side;
+    }
+
+    grow : dos(dos amount) {
+        side = side + amount;
+        return side;
+    }
+}
+
+class Circle {
+    init : interger(dos r) {
+        this.radius = r;
+        return 0;
+    }
+
+    area : dos() {
+        return 3.0 * radius * radius;
+    }
+}
+
+describe : dos(object shape) {
+    return shape.area();
+}
+
+var box object = Square(3.0);
+var ring object = Circle(1.0);
+print(box, " area = ", describe(box), ", ", ring, " area = ", describe(ring), "\n");
+box.grow(1.0);
+print("after grow, side = ", box.side, ", area = ", box.area(), "\n");
+box.side = 10.0;
+print("after box.side = 10.0, area = ", box.area(), "\n");
+
+collection shapes object[] = [Square(2.0), Circle(2.0), Square(1.0)];
+var totalArea dos = 0.0;
+foreach (shape ∆ shapes) {
+    totalArea = totalArea + shape.area();
+}
+print("total area of shapes = ", totalArea, "\n");
+
+collection steps interger<<>> = <<5, 10, 15>>;
+var stepTotal interger = 0;
+foreach (step ∆ steps) {
+    stepTotal = stepTotal + step;
+}
+print("sum of steps = ", stepTotal, "\n");
+
+collection a matrix[[]] = [[1.0, 2.0]\[3.0, 4.0]];
+collection b matrix[[]] = [[0.0, 1.0]\[1.0, 0.0]];
 print("a * b = ", a * b, "\n");
 print("a + b = ", a + b, "\n");
 print("a - b = ", a - b, "\n");
-print("a[[1,0]] = ", GET a[[1,0]], "\n");
+print("a * 2.0 = ", a * 2.0, "\n");
+print("10.0 - a = ", 10.0 - a, "\n");
+print("a / 4.0 = ", a / 4.0, "\n");
+print("a == a is ", a == a, ", a == b is ", a == b, "\n");
+print("a[[1,0]] = ", get a[[1,0]], "\n");
 
-collection rot interger[[]] = 2`2;
-rot[[0,1]] = 0 - 1;
-rot[[1,0]] = 1;
-collection p interger[[]] = [[1]\[1]];
+collection u matrix[[]] = [[1.0]\[2.0]\[3.0]];
+print("u ˚ u = ", u ˚ u, "\n");
+
+var cellTotal dos = 0.0;
+foreach (cell ∆ a) {
+    cellTotal = cellTotal + cell;
+}
+print("sum of cells in a = ", cellTotal, "\n");
+
+collection rot matrix[[]] = 2`2;
+rot[[0,0]] = 0.0;
+rot[[0,1]] = -1.0;
+rot[[1,0]] = 1.0;
+rot[[1,1]] = 0.0;
+collection p matrix[[]] = [[1.0]\[1.0]];
 print("rot * p = ", rot * p, "\n");
+
+return 0;

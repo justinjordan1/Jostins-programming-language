@@ -1,10 +1,10 @@
     .section .text.init,"ax",@progbits
     .globl _start
 _start:
-    la sp, rt_stack_top
+    la sp, __stack_top
     li t0, 0x6000
     csrs mstatus, t0
-    la t0, rt_heap
+    la t0, __heap_start
     la t1, rt_heap_ptr
     sd t0, 0(t1)
     call main
@@ -99,7 +99,7 @@ print_dos:
     fld ft2, 0(t0)
     fmul.d ft1, ft1, ft2
     fcvt.l.d s1, ft1, rne
-    li t0, 1000000
+    li t0, 10000000000
     blt s1, t0, 2f
     addi s0, s0, 1
     li s1, 0
@@ -108,8 +108,8 @@ print_dos:
     la a0, rt_s_dot
     call print_str
     mv t0, s1
-    addi t1, sp, 5
-    li t3, 6
+    addi t1, sp, 9
+    li t3, 10
     li t2, 10
 3:  remu t4, t0, t2
     addi t4, t4, 48
@@ -118,7 +118,7 @@ print_dos:
     addi t1, t1, -1
     addi t3, t3, -1
     bnez t3, 3b
-    li t3, 6
+    li t3, 10
 4:  li t4, 1
     ble t3, t4, 5f
     add t1, sp, t3
@@ -167,8 +167,41 @@ pow_dos_int:
 3:  fmv.d fa0, ft0
     ret
 
+    .globl rt_alloc
+rt_alloc:
+    la t1, rt_heap_ptr
+    ld t2, 0(t1)
+    add t3, t2, a0
+    addi t3, t3, 15
+    andi t3, t3, -16
+    la t4, __heap_end
+    bgtu t3, t4, rt_oom
+    sd t3, 0(t1)
+    mv a0, t2
+    ret
+
+    .globl rt_str_eq
+rt_str_eq:
+    ld t0, 0(a0)
+    ld t1, 0(a1)
+    bne t0, t1, 2f
+1:  beqz t0, 3f
+    lbu t2, 8(a0)
+    lbu t3, 8(a1)
+    bne t2, t3, 2f
+    addi a0, a0, 1
+    addi a1, a1, 1
+    addi t0, t0, -1
+    j 1b
+2:  li a0, 0
+    ret
+3:  li a0, 1
+    ret
+
     .globl mat_alloc
 mat_alloc:
+    bltz a0, rt_bounds
+    bltz a1, rt_bounds
     mul t0, a0, a1
     slli t0, t0, 3
     addi t0, t0, 16
@@ -177,7 +210,7 @@ mat_alloc:
     add t3, t2, t0
     addi t3, t3, 15
     andi t3, t3, -16
-    la t4, rt_heap_end
+    la t4, __heap_end
     bgtu t3, t4, rt_oom
     sd t3, 0(t1)
     sd a0, 0(t2)
@@ -370,6 +403,15 @@ mat_print:
 rt_dims:
     la a0, rt_s_dims
     j rt_die
+    .globl rt_div_zero
+rt_div_zero:
+    la a0, rt_s_divzero
+    j rt_die
+    .globl rt_no_method
+rt_no_method:
+    la a0, rt_s_nomethod
+    j rt_die
+    .globl rt_bounds
 rt_bounds:
     la a0, rt_s_bounds
     j rt_die
@@ -382,7 +424,7 @@ rt_die:
 
     .section .rodata
     .balign 8
-rt_d_million: .double 1000000.0
+rt_d_million: .double 10000000000.0
 rt_d_one:     .double 1.0
     .balign 8
 rt_s_true:  .quad 4
@@ -417,14 +459,15 @@ rt_s_bounds: .quad 2f - 1f
 rt_s_oom:   .quad 2f - 1f
 1:          .ascii "Runtime error: out of memory\n"
 2:
+    .balign 8
+rt_s_divzero: .quad 2f - 1f
+1:          .ascii "Runtime error: division by zero\n"
+2:
+    .balign 8
+rt_s_nomethod: .quad 2f - 1f
+1:          .ascii "Runtime error: object has no such method\n"
+2:
 
     .data
     .balign 8
 rt_heap_ptr: .quad 0
-
-    .bss
-    .balign 16
-rt_heap:      .space 16777216
-rt_heap_end:
-rt_stack:     .space 1048576
-rt_stack_top:

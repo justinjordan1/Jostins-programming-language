@@ -9,27 +9,35 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 
 public class Compile {
 
     public static void main(String[] args) throws IOException {
-        if (args.length != 2) {
-            System.out.println("Usage: Compile [path to .mexplainerth file] [output .s file]");
+        if (args.length != 3) {
+            System.out.println("Usage: Compile [runtime .mexplainerth] [program .mexplainerth] [output .s file]");
             System.exit(64);
         }
-        String source = new String(Files.readAllBytes(Paths.get(args[0])), StandardCharsets.UTF_8);
 
-        ArrayList<Lexeme> lexemes = new Lexer(source).lex();
-        Lexeme program = new Parser(lexemes).program();
+        Lexeme runtimeLibrary = parse(args[0]);
+        if (C10H15N.hasSyntaxErrors()) {
+            C10H15N.printErrors();
+            System.err.println("The runtime library " + args[0] + " has syntax errors.");
+            System.exit(1);
+        }
+        Lexeme program = parse(args[1]);
         if (C10H15N.hasSyntaxErrors()) C10H15N.printErrors();
 
         try {
-            String assembly = new CodeGen().compile(program);
-            Files.write(Paths.get(args[1]), assembly.getBytes(StandardCharsets.UTF_8));
+            String assembly = new CodeGen().compile(runtimeLibrary, program);
+            Files.write(Paths.get(args[2]), assembly.getBytes(StandardCharsets.UTF_8));
         } catch (RuntimeException e) {
             System.err.println(e.getMessage());
             System.exit(1);
         }
+    }
+
+    private static Lexeme parse(String path) throws IOException {
+        String source = new String(Files.readAllBytes(Paths.get(path)), StandardCharsets.UTF_8);
+        return new Parser(new Lexer(source).lex()).program();
     }
 }
