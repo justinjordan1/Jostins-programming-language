@@ -1,0 +1,9 @@
+choose : interger(interger value) {
+    if (value == 1) {
+        return 7;
+    }
+
+    return 9;
+}
+
+return choose(1);

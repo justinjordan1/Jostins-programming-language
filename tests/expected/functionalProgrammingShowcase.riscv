@@ -1,0 +1,26 @@
+=== 1. Currying & Chained Calls f(a)(b)(c) ===
+make_affine(3)(7)(10) = 37
+Direct chain make_affine(4)(-2)(5) = 18
+
+=== 2. Function Composition & Iteration ===
+compose(double, +3)(4) = 14
+iterate(compose(double, +3), 3)(1) = 50
+
+=== 3. Independent Stateful Closures ===
+accA(1), accA(2), accA(3): 111, 123, 136
+accB(0), accB(10):         5, 20
+
+=== 4. First-Class Function Collections & Foreach Pipeline ===
+Pipeline ((2 + 5) * 3)^2 - 10 = 431
+
+=== 5. Higher-Order Fold (Sum of Squares & Factorial) ===
+Sum of squares (1..5) = 55
+Factorial 6!          = 720
+
+=== 6. Functional Matrix Generation & Mapping ===
+Generated matrix: [[11.0, 12.0], [21.0, 22.0]]
+Mapped matrix (cell * 0.5 + 1.0): [[6.5, 7.0], [11.5, 12.0]]
+
+=== 7. Objects Holding Closures ===
+Stage 'timesSixPlusOne' on 7 = 43
+Program result: 1206

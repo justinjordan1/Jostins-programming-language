@@ -1,0 +1,38 @@
+class Vault {
+    var payload matrix = [[0.0]];
+
+    init : interger(matrix initial) {
+        this.payload = initial;
+        return 0;
+    }
+
+    read : matrix() {
+        return this.payload;
+    }
+}
+
+make_keeper : function(matrix saved) {
+    return : matrix() {
+        return saved;
+    };
+}
+
+var vault object = Vault([[10.0, 20.0]\[30.0, 40.0]]);
+
+for (var warm_index interger = 0; warm_index < 8) ¬+ {
+    collection warm matrix[[]] = 12`12;
+    warm[[0,0]] = warm_index;
+}
+var keeper function = make_keeper([[50.0, 60.0]\[70.0, 80.0]]);
+
+for (var i interger = 0; i < 160) ¬+ {
+    collection scratch matrix[[]] = 12`12;
+    scratch[[0,0]] = i;
+    scratch[[11,11]] = i * 2;
+}
+
+collection observed matrix[[]] = vault.read();
+collection closure_observed matrix[[]] = keeper();
+print("vault payload survives collection: ", observed, "\n");
+print("closure payload survives collection: ", closure_observed, "\n");
+return closure_observed;

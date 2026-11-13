@@ -1,0 +1,17 @@
+addFive(1) = 6, addTen(1) = 11
+makeAdder(100)(1) = 101
+triple(14) = 42
+double(21) = 42
+twice(double)(5) = 20
+twice(twice(double))(1) = 16
+compose(double, addFive)(1) = 12
+applyTwice(addFive, 1) = 11
+tick() third call = 3, tock() first call = 1
+curry(1)(2)(3) = 123
+1 through addFive, double, addTen = 22
+map(square, [[1, 2, 3]]) = [[1, 4, 9]]
+button.onClick(1) = 1001
+fib(15) still recurses = 610
+show() called from caller() sees n = 100
+printing a function: function
+Program result: INTERGER Line: 114 value: 0

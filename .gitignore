@@ -1,0 +1,6 @@
+out/
+riscv/build/
+editor/build/
+.DS_Store
+web/build/
+web/target/

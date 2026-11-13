@@ -1,0 +1,37 @@
+2 + 3 * 4 = 14
+fact(10) = 3628800
+hyp(3, 4) = 25.0
+first(4) = 41
+2 î 10 = 1024
+16.0 î 0.5 = 4.0
+2.0 î -2 = 0.25
+17 %% 5 = 2
+7 / 2 = 3 and 7 / 2.0 = 3.5
+neg = -42
+2.5 * 3 as interger = 8
+t & f = false, t | f = true
+word == hi is true, word == yo is false
+2.0 î 1.5 is about 2.8284: true
+sin(0.5) is about 0.4794: true
+cos(0.5) is about 0.8776: true
+sin(100.0) is about -0.5064: true
+random(2.0, 3.0) in range: true
+sum of evens up to 10 = 30
+3 2 1 liftoff
+Square area = 9.0, Circle area = 3.0
+after grow, side = 4.0, area = 16.0
+after box.side = 10.0, area = 100.0
+total area of shapes = 17.0
+sum of steps = 30
+a * b = [[2.0, 1.0], [4.0, 3.0]]
+a + b = [[1.0, 3.0], [4.0, 4.0]]
+a - b = [[1.0, 1.0], [2.0, 4.0]]
+a * 2.0 = [[2.0, 4.0], [6.0, 8.0]]
+10.0 - a = [[9.0, 8.0], [7.0, 6.0]]
+a / 4.0 = [[0.25, 0.5], [0.75, 1.0]]
+a == a is true, a == b is false
+a[[1,0]] = 3.0
+u ˚ u = [[14.0]]
+sum of cells in a = 10.0
+rot * p = [[-1.0], [1.0]]
+Program result: INTERGER Line: 157 value: 0

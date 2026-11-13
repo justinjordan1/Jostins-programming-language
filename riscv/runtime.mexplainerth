@@ -1,0 +1,450 @@
+var rt_seed interger = 20230426;
+
+rt_random01 : dos() {
+    rt_seed = (rt_seed * 48271) %% 2147483647;
+    return (rt_seed - 1) / 2147483647.0;
+}
+
+rt_random : dos(dos low, dos high) {
+    return low + (high - low) * rt_random01();
+}
+
+rt_sin : dos(dos x) {
+    var turns interger = x / 6.283185307179586;
+    var r dos = x - turns * 6.283185307179586;
+    var term dos = r;
+    var sum dos = r;
+    var n interger = 1;
+    while (n < 16) {
+        term = (0.0 - term) * r * r / ((2 * n) * (2 * n + 1));
+        var next dos = sum + term;
+        if (n > 3 & next == sum) {
+            break;
+        }
+        sum = next;
+        n = n + 1;
+    }
+    return sum;
+}
+
+rt_cos : dos(dos x) {
+    var turns interger = x / 6.283185307179586;
+    var r dos = x - turns * 6.283185307179586;
+    var term dos = 1.0;
+    var sum dos = 1.0;
+    var n interger = 1;
+    while (n < 16) {
+        term = (0.0 - term) * r * r / ((2 * n - 1) * (2 * n));
+        var next dos = sum + term;
+        if (n > 3 & next == sum) {
+            break;
+        }
+        sum = next;
+        n = n + 1;
+    }
+    return sum;
+}
+
+rt_mat_sin : matrix(matrix m) {
+    var rows interger = rt_rows(m);
+    var cols interger = rt_cols(m);
+    collection result matrix[[]] = cols`rows;
+    var row interger = 0;
+    while (row < rows) {
+        var column interger = 0;
+        while (column < cols) {
+            result[[row,column]] = rt_sin(get m[[row,column]]);
+            column = column + 1;
+        }
+        row = row + 1;
+    }
+    return result;
+}
+
+rt_mat_cos : matrix(matrix m) {
+    var rows interger = rt_rows(m);
+    var cols interger = rt_cols(m);
+    collection result matrix[[]] = cols`rows;
+    var row interger = 0;
+    while (row < rows) {
+        var column interger = 0;
+        while (column < cols) {
+            result[[row,column]] = rt_cos(get m[[row,column]]);
+            column = column + 1;
+        }
+        row = row + 1;
+    }
+    return result;
+}
+
+rt_eye : matrix(interger size) {
+    collection result matrix[[]] = size`size;
+    var row interger = 0;
+    while (row < size) {
+        var column interger = 0;
+        while (column < size) {
+            if (row == column) {
+                result[[row,column]] = 1.0;
+            } else {
+                result[[row,column]] = 0.0;
+            }
+            column = column + 1;
+        }
+        row = row + 1;
+    }
+    return result;
+}
+
+rt_mat_det : dos(matrix m) {
+    var rows interger = rt_rows(m);
+    var cols interger = rt_cols(m);
+    if (!(rows == cols)) {
+        return 0.0;
+    }
+    collection work matrix[[]] = cols`rows;
+    var row interger = 0;
+    while (row < rows) {
+        var column interger = 0;
+        while (column < cols) {
+            work[[row,column]] = get m[[row,column]];
+            column = column + 1;
+        }
+        row = row + 1;
+    }
+    var determinant dos = 1.0;
+    var pivotRow interger = 0;
+    while (pivotRow < rows) {
+        var pivot dos = get work[[pivotRow,pivotRow]];
+        if (pivot == 0.0) {
+            var swapRow interger = pivotRow + 1;
+            while (swapRow < rows & pivot == 0.0) {
+                var candidate dos = get work[[swapRow,pivotRow]];
+                if (candidate > 0.0 | candidate < 0.0) {
+                    var column interger = pivotRow;
+                    while (column < cols) {
+                        var saved dos = get work[[pivotRow,column]];
+                        work[[pivotRow,column]] = get work[[swapRow,column]];
+                        work[[swapRow,column]] = saved;
+                        column = column + 1;
+                    }
+                    determinant = 0.0 - determinant;
+                    pivot = candidate;
+                }
+                swapRow = swapRow + 1;
+            }
+        }
+        if (pivot == 0.0) {
+            return 0.0;
+        }
+        determinant = determinant * pivot;
+        var below interger = pivotRow + 1;
+        while (below < rows) {
+            var factor dos = get work[[below,pivotRow]] / pivot;
+            var column interger = pivotRow + 1;
+            while (column < cols) {
+                work[[below,column]] = get work[[below,column]] - factor * get work[[pivotRow,column]];
+                column = column + 1;
+            }
+            below = below + 1;
+        }
+        pivotRow = pivotRow + 1;
+    }
+    return determinant;
+}
+
+rt_mat_inverse : matrix(matrix m) {
+    var rows interger = rt_rows(m);
+    var cols interger = rt_cols(m);
+    if (!(rows == cols)) {
+        return m;
+    }
+    var wide interger = 2 * cols;
+    collection work matrix[[]] = wide`rows;
+    var row interger = 0;
+    while (row < rows) {
+        var column interger = 0;
+        while (column < cols) {
+            work[[row,column]] = get m[[row,column]];
+            if (row == column) {
+                work[[row,column + cols]] = 1.0;
+            } else {
+                work[[row,column + cols]] = 0.0;
+            }
+            column = column + 1;
+        }
+        row = row + 1;
+    }
+    var pivotRow interger = 0;
+    while (pivotRow < rows) {
+        var pivot dos = get work[[pivotRow,pivotRow]];
+        if (pivot == 0.0) {
+            var swapRow interger = pivotRow + 1;
+            while (swapRow < rows & pivot == 0.0) {
+                var candidate dos = get work[[swapRow,pivotRow]];
+                if (candidate > 0.0 | candidate < 0.0) {
+                    var column interger = 0;
+                    while (column < 2 * cols) {
+                        var saved dos = get work[[pivotRow,column]];
+                        work[[pivotRow,column]] = get work[[swapRow,column]];
+                        work[[swapRow,column]] = saved;
+                        column = column + 1;
+                    }
+                    pivot = candidate;
+                }
+                swapRow = swapRow + 1;
+            }
+        }
+        var column interger = 0;
+        while (column < 2 * cols) {
+            work[[pivotRow,column]] = get work[[pivotRow,column]] / pivot;
+            column = column + 1;
+        }
+        row = 0;
+        while (row < rows) {
+            if (!(row == pivotRow)) {
+                var factor dos = get work[[row,pivotRow]];
+                column = 0;
+                while (column < 2 * cols) {
+                    work[[row,column]] = get work[[row,column]] - factor * get work[[pivotRow,column]];
+                    column = column + 1;
+                }
+            }
+            row = row + 1;
+        }
+        pivotRow = pivotRow + 1;
+    }
+    collection result matrix[[]] = cols`rows;
+    row = 0;
+    while (row < rows) {
+        var column interger = 0;
+        while (column < cols) {
+            result[[row,column]] = get work[[row,column + cols]];
+            column = column + 1;
+        }
+        row = row + 1;
+    }
+    return result;
+}
+
+rt_ln : dos(dos x) {
+    var k interger = 0;
+    var m dos = x;
+    while (m > 1.5 & k < 1100) {
+        m = m / 2.0;
+        k = k + 1;
+    }
+    while (m < 0.75 & k > -1100) {
+        m = m * 2.0;
+        k = k - 1;
+    }
+    var s dos = (m - 1.0) / (m + 1.0);
+    var s2 dos = s * s;
+    var term dos = s;
+    var sum dos = 0.0;
+    var n interger = 0;
+    while (n < 20) {
+        sum = sum + term / (2 * n + 1);
+        term = term * s2;
+        n = n + 1;
+    }
+    return 2.0 * sum + k * 0.6931471805599453;
+}
+
+rt_exp : dos(dos x) {
+    var k interger = x / 0.6931471805599453;
+    if (k > 1100) {
+        k = 1100;
+    }
+    if (k < -1100) {
+        k = -1100;
+    }
+    var r dos = x - k * 0.6931471805599453;
+    var term dos = 1.0;
+    var sum dos = 1.0;
+    var n interger = 1;
+    while (n < 22) {
+        term = term * r / n;
+        sum = sum + term;
+        n = n + 1;
+    }
+    while (k > 0) {
+        sum = sum * 2.0;
+        k = k - 1;
+    }
+    while (k < 0) {
+        sum = sum / 2.0;
+        k = k + 1;
+    }
+    return sum;
+}
+
+rt_pow : dos(dos x, dos y) {
+    if (y == 0.0) {
+        return 1.0;
+    }
+    if (y == 0.5) {
+        return rt_fsqrt(x);
+    }
+    var whole interger = y;
+    if (whole == y) {
+        var result dos = 1.0;
+        var count interger = whole;
+        if (count < 0) {
+            count = 0 - count;
+        }
+        while (count > 0) {
+            result = result * x;
+            count = count - 1;
+        }
+        if (whole < 0) {
+            return 1.0 / result;
+        }
+        return result;
+    }
+    if (x <= 0.0) {
+        return 0.0;
+    }
+    return rt_exp(y * rt_ln(x));
+}
+
+rt_mat_scale : matrix(matrix m, dos s, interger op, interger scalarFirst) {
+    var r interger = rt_rows(m);
+    var c interger = rt_cols(m);
+    collection result matrix[[]] = c`r;
+    var i interger = 0;
+    while (i < r) {
+        var j interger = 0;
+        while (j < c) {
+            var cell dos = get m[[i,j]];
+            var left dos = cell;
+            var right dos = s;
+            if (scalarFirst == 1) {
+                left = s;
+                right = cell;
+            }
+            if (op == 0) {
+                result[[i,j]] = left + right;
+            } elseif (op == 1) {
+                result[[i,j]] = left - right;
+            } elseif (op == 2) {
+                result[[i,j]] = left * right;
+            } else {
+                result[[i,j]] = left / right;
+            }
+            j = j + 1;
+        }
+        i = i + 1;
+    }
+    return result;
+}
+
+rt_mat_dot : matrix(matrix a, matrix b) {
+    var ra interger = rt_rows(a);
+    var ca interger = rt_cols(a);
+    var rb interger = rt_rows(b);
+    var cb interger = rt_cols(b);
+    var na interger = ra * ca;
+    var nb interger = rb * cb;
+    var vecA interger = 0;
+    var vecB interger = 0;
+    if (ra == 1 | ca == 1) {
+        vecA = 1;
+    }
+    if (rb == 1 | cb == 1) {
+        vecB = 1;
+    }
+    if (vecA == 1 & vecB == 1 & na == nb) {
+        var sum dos = 0.0;
+        var i interger = 0;
+        while (i < na) {
+            sum = sum + get a[[i / ca, i %% ca]] * get b[[i / cb, i %% cb]];
+            i = i + 1;
+        }
+        collection one matrix[[]] = 1`1;
+        one[[0,0]] = sum;
+        return one;
+    }
+    return a * b;
+}
+
+rt_mat_eq : interger(matrix a, matrix b) {
+    var r interger = rt_rows(a);
+    var c interger = rt_cols(a);
+    if (r == rt_rows(b)) {
+        if (c == rt_cols(b)) {
+            var i interger = 0;
+            while (i < r) {
+                var j interger = 0;
+                while (j < c) {
+                    var gap dos = get a[[i,j]] - get b[[i,j]];
+                    if (gap > 0.0) {
+                        return 0;
+                    }
+                    if (gap < 0.0) {
+                        return 0;
+                    }
+                    j = j + 1;
+                }
+                i = i + 1;
+            }
+            return 1;
+        }
+    }
+    return 0;
+}
+
+rt_solve : dos(function f, dos guess) {
+    var x dos = guess;
+    var iteration interger = 0;
+    while (iteration < 32) {
+        var y dos = f(x);
+        var size dos = y;
+        if (size < 0.0) {
+            size = 0.0 - size;
+        }
+        if (size < 0.000000001) {
+            return x;
+        }
+        var scale dos = x;
+        if (scale < 0.0) {
+            scale = 0.0 - scale;
+        }
+        if (scale < 1.0) {
+            scale = 1.0;
+        }
+        var step dos = 0.000001 * scale;
+        var slope dos = (f(x + step) - y) / step;
+        var steep dos = slope;
+        if (steep < 0.0) {
+            steep = 0.0 - steep;
+        }
+        if (steep < 0.000000000001) {
+            return rt_fsqrt(-1.0);
+        }
+        var next dos = x - y / slope;
+        var moved dos = next - x;
+        if (moved < 0.0) {
+            moved = 0.0 - moved;
+        }
+        if (moved < 0.0000000001) {
+            return next;
+        }
+        x = next;
+        iteration = iteration + 1;
+    }
+    return rt_fsqrt(-1.0);
+}
+
+rt_tabulate : matrix(interger rows, interger columns, function f) {
+    collection result matrix[[]] = columns`rows;
+    var row interger = 0;
+    while (row < rows) {
+        var column interger = 0;
+        while (column < columns) {
+            result[[row,column]] = f(row, column);
+            column = column + 1;
+        }
+        row = row + 1;
+    }
+    return result;
+}

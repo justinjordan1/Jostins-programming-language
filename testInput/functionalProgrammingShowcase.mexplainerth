@@ -1,0 +1,141 @@
+compose : function(function f, function g) {
+    return : interger(interger x) {
+        return f(g(x));
+    };
+}
+
+iterate : function(function f, interger times) {
+    return : interger(interger start) {
+        var acc interger = start;
+        var i interger = 0;
+        while (i < times) {
+            acc = f(acc);
+            i = i + 1;
+        }
+        return acc;
+    };
+}
+
+make_affine : function(interger scale) {
+    return : function(interger shift) {
+        return : interger(interger x) {
+            return scale * x + shift;
+        };
+    };
+}
+
+make_accumulator : function(interger seed, interger step) {
+    var state interger = seed;
+    return : interger(interger bonus) {
+        state = state + step + bonus;
+        return state;
+    };
+}
+
+fold_range : interger(interger low, interger high, interger init, function reducer) {
+    var acc interger = init;
+    for (var i interger = low; i <= high) ¬+ {
+        acc = reducer(acc, i);
+    }
+    return acc;
+}
+
+build_matrix : matrix(interger rows, interger cols, function generator) {
+    collection out matrix[[]] = cols`rows;
+    for (var r interger = 0; r < rows) ¬+ {
+        for (var c interger = 0; c < cols) ¬+ {
+            out[[r, c]] = generator(r, c);
+        }
+    }
+    return out;
+}
+
+map_matrix : matrix(matrix m, function transform) {
+    collection out matrix[[]] = 2`2;
+    for (var r interger = 0; r < 2) ¬+ {
+        for (var c interger = 0; c < 2) ¬+ {
+            out[[r, c]] = transform(get m[[r, c]]);
+        }
+    }
+    return out;
+}
+
+class PipeStage {
+    var label string = "stage";
+    var op function = : interger(interger x) { return x; };
+
+    init : interger(string name, function fn) {
+        this.label = name;
+        this.op = fn;
+        return 0;
+    }
+
+    run : interger(interger input) {
+        return this.op(input);
+    }
+}
+
+print("=== 1. Currying & Chained Calls f(a)(b)(c) ===\n");
+var linear function = make_affine(3)(7);
+print("make_affine(3)(7)(10) = ", linear(10), "\n");
+print("Direct chain make_affine(4)(-2)(5) = ", make_affine(4)(-2)(5), "\n\n");
+
+print("=== 2. Function Composition & Iteration ===\n");
+var double_it function = : interger(interger x) { return x * 2; };
+var inc_by_3 function = : interger(interger x) { return x + 3; };
+var double_after_inc function = compose(double_it, inc_by_3);
+var quad_step function = iterate(double_after_inc, 3);
+print("compose(double, +3)(4) = ", double_after_inc(4), "\n");
+print("iterate(compose(double, +3), 3)(1) = ", quad_step(1), "\n\n");
+
+print("=== 3. Independent Stateful Closures ===\n");
+var accA function = make_accumulator(100, 10);
+var accB function = make_accumulator(0, 5);
+print("accA(1), accA(2), accA(3): ", accA(1), ", ", accA(2), ", ", accA(3), "\n");
+print("accB(0), accB(10):         ", accB(0), ", ", accB(10), "\n\n");
+
+print("=== 4. First-Class Function Collections & Foreach Pipeline ===\n");
+collection pipeline function[] = [
+    : interger(interger x) { return x + 5; },
+    : interger(interger x) { return x * 3; },
+    : interger(interger x) { return x * x; },
+    : interger(interger x) { return x - 10; }
+];
+
+var pipe_val interger = 2;
+foreach (step ∆ pipeline) {
+    pipe_val = step(pipe_val);
+}
+print("Pipeline ((2 + 5) * 3)^2 - 10 = ", pipe_val, "\n");
+print("\n");
+
+print("=== 5. Higher-Order Fold (Sum of Squares & Factorial) ===\n");
+var sum_sq interger = fold_range(1, 5, 0, : interger(interger acc, interger x) {
+    return acc + x * x;
+});
+var fact6 interger = fold_range(1, 6, 1, : interger(interger acc, interger x) {
+    return acc * x;
+});
+print("Sum of squares (1..5) = ", sum_sq, "\n");
+print("Factorial 6!          = ", fact6, "\n\n");
+
+print("=== 6. Functional Matrix Generation & Mapping ===\n");
+collection m matrix[[]] = build_matrix(2, 2, : dos(interger r, interger c) {
+    return (r + 1) * 10.0 + (c + 1);
+});
+print("Generated matrix: ", m, "\n");
+
+var factor dos = 0.5;
+collection scaled matrix[[]] = map_matrix(m, : dos(dos cell) {
+    return cell * factor + 1.0;
+});
+print("Mapped matrix (cell * 0.5 + 1.0): ", scaled, "\n\n");
+
+print("=== 7. Objects Holding Closures ===\n");
+var multiplier interger = 6;
+var stage object = PipeStage("timesSixPlusOne", : interger(interger x) {
+    return x * multiplier + 1;
+});
+print("Stage '", stage.label, "' on 7 = ", stage.run(7), "\n");
+
+return pipe_val + sum_sq + fact6;

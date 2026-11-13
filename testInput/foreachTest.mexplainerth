@@ -1,0 +1,35 @@
+class Counter {
+    var value interger = 0;
+
+    init : interger(interger start) {
+        this.value = start;
+        return 0;
+    }
+
+    bump : interger(interger amount) {
+        value = value + amount;
+        return value;
+    }
+}
+
+var total interger = 0;
+collection counters object[] = [Counter(1), Counter(2), Counter(3)];
+
+foreach (counter ∆ counters) {
+    counter.bump(10);
+    total = total + counter.value;
+}
+
+collection values matrix[[]] = [[1,2]\[3,4]];
+
+foreach (value ∆ values) {
+    total = total + value;
+}
+
+collection bonuses interger<<>> = <<5,5>>;
+
+foreach (bonus ∆ bonuses) {
+    total = total + bonus;
+}
+
+return total;

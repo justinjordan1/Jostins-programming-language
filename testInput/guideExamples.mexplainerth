@@ -1,0 +1,52 @@
+var a interger = 7;
+var b dos = 2.5;
+var ok george = true;
+print(a %% 3, " ", 2 î 10, " ", a / 2, " ", a / 2.0, "\n");
+print(!ok, " ", a > 3 & b < 3.0, " ", a == 7 | false, "\n");
+addOne : interger(interger x) { return x + 1; }
+twice : interger(interger x) { return x * 2; }
+print(3 |> addOne |> twice, "\n");
+var both function = compose(twice, addOne);
+print(both(3), "\n");
+collection m matrix[[]] = [[1.0, 2.0]\[3.0, 4.0]];
+print(í m, " ", det(m), " ", eye(2), "\n");
+print(sin(m), "\n");
+collection big matrix[[]] = 3`2;
+print(big, "\n");
+collection v matrix[[]] = [[1.0, 2.0, 3.0]];
+print(v ˚ v, "\n");
+print(tabulate(2, 2, : dos(interger r, interger c) { return r * 10 + c; }), "\n");
+square : dos(dos x) { return x * x - 2.0; }
+print(solve(square, 1.0), "\n");
+collection list interger[] = [1, 2, 3];
+foreach (n ∆ list) { print(n, " "); }
+print("\n");
+var i interger = 0;
+indefinitlypreform {
+    i = i + 1;
+    if (i == 3) { break; }
+}
+print("i = ", i, "\n");
+var other interger = 3;
+if (other =/= 4) {
+    print("not four\n");
+}
+var count interger = 0;
+whilethisisbasicallytrue (count < 3) 10% {
+    count = count + 1;
+}
+print("count = ", count, "\n");
+collection numbers interger[] = [4, 5, 6];
+print(get numbers[1], "\n");
+var wide, high dos = 1.5;
+print(wide + high, " ", í 4.0, "\n");
+makeAdder : function(interger n) {
+    return : interger(interger x) {
+        return x + n;
+    };
+}
+print(makeAdder(5)(10), "\n");
+lastValue : interger(interger x) {
+    var y interger = x * 3;
+}
+print(lastValue(4), "\n");

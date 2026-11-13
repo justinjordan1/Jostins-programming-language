@@ -1,0 +1,1650 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>MeXpl</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mathquill/0.10.1/mathquill.min.css">
+<script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathquill/0.10.1/mathquill.min.js"></script>
+<style>
+  :root {
+    --ink: #1d2230; --muted: #6b7385; --faint: #9aa1b1; --line: #e6e8ee; --panel: #ffffff; --soft: #f6f7fa;
+    --accent: #3b6fe0; --accent-soft: #e8efff; --code: #f8f9fc; --radius: 8px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; display: flex; height: 100vh; overflow: hidden; color: var(--ink); background: var(--soft);
+    font: 13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }
+  button { font: inherit; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
+    padding: 4px 10px; cursor: pointer; transition: background 0.12s, border-color 0.12s; }
+  button:hover { background: var(--soft); border-color: #d3d7e0; }
+  select { font: inherit; border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px; background: var(--panel); color: var(--ink); }
+  input[type=number] { font: inherit; border: 1px solid var(--line); border-radius: 5px; padding: 2px 5px; background: var(--panel); color: var(--ink); }
+  input[type=range] { accent-color: var(--accent); }
+
+  #side { width: 460px; flex: none; display: flex; flex-direction: column; background: var(--panel); border-right: 1px solid var(--line); min-height: 0; }
+  #brand { display: flex; align-items: center; gap: 10px; padding: 10px 12px 0; }
+  #brand b { font-size: 14px; letter-spacing: 0.2px; }
+  #brand .spacer { flex: 1; }
+  #tabs { display: flex; align-items: flex-end; gap: 2px; padding: 8px 10px 0; border-bottom: 1px solid var(--line); overflow-x: auto; }
+  .tab { display: flex; align-items: center; gap: 6px; padding: 6px 10px; border: 1px solid transparent; border-bottom: none;
+    border-radius: 7px 7px 0 0; color: var(--muted); cursor: pointer; white-space: nowrap; user-select: none; }
+  .tab:hover { color: var(--ink); background: var(--soft); }
+  .tab.active { color: var(--ink); background: var(--panel); border-color: var(--line); margin-bottom: -1px; font-weight: 600; }
+  .tab .close { color: var(--faint); font-size: 14px; line-height: 1; padding: 0 2px; border-radius: 3px; }
+  .tab .close:hover { color: #c33; background: #fbe9e9; }
+  .tab input { font: inherit; width: 110px; border: 1px solid var(--accent); border-radius: 4px; padding: 0 4px; }
+  #newTab { border: none; background: none; color: var(--muted); font-size: 16px; padding: 4px 8px; }
+  #bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--line); }
+  .segmented { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  .segmented label { padding: 4px 10px; cursor: pointer; color: var(--muted); }
+  .segmented input { display: none; }
+  .segmented label:has(input:checked) { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  #status { color: var(--muted); font-size: 12px; margin-left: auto; }
+  #status.busy::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--accent);
+    margin-right: 6px; animation: pulse 0.9s infinite alternate; }
+  @keyframes pulse { from { opacity: 0.25; } to { opacity: 1; } }
+  #document { flex: 1; overflow-y: auto; min-height: 0; }
+
+  .block { position: relative; border-bottom: 1px solid var(--line); }
+  .block:focus-within { box-shadow: inset 3px 0 0 var(--accent); }
+  .block .tools { position: absolute; right: 6px; top: 4px; display: none; gap: 2px; z-index: 2; }
+  .block:hover .tools { display: flex; }
+  .block .tools button { font-size: 11px; padding: 1px 6px; color: var(--muted); }
+  .codeBlock textarea { display: block; width: 100%; margin: 0; border: none; resize: none; overflow: hidden; outline: none;
+    font: 12.5px/19px ui-monospace, SFMono-Regular, Menlo, monospace; padding: 10px 12px 10px 34px; background: var(--code); color: var(--ink); tab-size: 4; }
+  .codeBlock .dot { position: absolute; left: 12px; top: 14px; }
+  .row { display: flex; align-items: center; padding: 8px 10px 8px 12px; min-height: 44px; }
+  .dot { width: 13px; height: 13px; border-radius: 50%; margin-right: 10px; flex: none; cursor: pointer;
+    box-shadow: 0 0 0 2px var(--panel), 0 0 0 3px rgba(0,0,0,0.06); transition: transform 0.1s; }
+  .dot:hover { transform: scale(1.2); }
+  .dot.off { background: var(--panel) !important; box-shadow: inset 0 0 0 2px #c2c7d2; }
+  .row .mq-editable-field { flex: 1; border: none; min-height: 28px; font-size: 17px; overflow-x: auto; box-shadow: none !important; }
+  .val { margin-left: 8px; padding: 3px 9px; background: var(--soft); border: 1px solid var(--line); border-radius: 6px;
+    font: 12px ui-monospace, Menlo, monospace; color: var(--ink); white-space: nowrap; max-width: 220px; overflow-x: auto; }
+  .val:empty { display: none; }
+  .val { cursor: pointer; }
+  body.noValues .val, body.noValues .valOff { display: none; }
+  #drag { width: 6px; flex: none; margin: 0 -3px; cursor: col-resize; position: relative; z-index: 5; }
+  #drag:hover, #drag.on { background: var(--accent-soft); }
+  .val:hover { border-color: #c9cfdb; }
+  .val .mq-math-mode { font-size: 14px; }
+  .valOff { margin-left: 6px; font-size: 11px; color: var(--faint); border: 1px dashed var(--line); border-radius: 5px; padding: 1px 6px; cursor: pointer; display: none; }
+  .valOff.on { display: inline-block; }
+  .play { width: 24px; height: 24px; padding: 0; border-radius: 50%; font-size: 10px; flex: none; }
+  .play.playing { background: var(--accent); color: white; border-color: var(--accent); }
+  #recordBar { display: none; position: absolute; left: 12px; top: 12px; background: var(--panel); border: 1px solid var(--line);
+    border-radius: var(--radius); box-shadow: 0 2px 10px rgba(20,30,60,0.08); padding: 6px 10px; gap: 8px; align-items: center; }
+  #recordBar.on { display: flex; }
+  .range { display: flex; align-items: center; gap: 6px; padding: 0 12px 8px 35px; color: var(--muted); font-size: 12px; }
+  .range .mq-editable-field { min-width: 56px; border: none; border-bottom: 1px solid var(--line); box-shadow: none !important; }
+  .inlineSlider { display: flex; align-items: center; gap: 8px; padding: 0 12px 10px 35px; }
+  .inlineSlider input[type=range] { flex: 1; }
+  .inlineSlider input[type=number] { width: 54px; font-size: 11px; color: var(--muted); }
+  #addBar { display: flex; gap: 6px; padding: 10px 12px; }
+  #addBar button { color: var(--muted); border-style: dashed; }
+  .error { color: #b3261e; font-size: 12px; padding: 0 12px; }
+  .error:not(:empty) { padding: 6px 12px; background: #fdf0ef; }
+  .makeSlider { margin-left: 6px; font-size: 11px; }
+  #sliders { padding: 4px 12px; }
+  #sliders:not(:empty)::before { content: "sliders"; display: block; color: var(--faint); font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; margin: 6px 0 4px; }
+  .slider { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
+  .slider span { width: 130px; overflow: hidden; text-overflow: ellipsis; color: var(--muted); font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+  .slider input[type=range] { flex: 1; }
+  .slider input[type=number] { width: 70px; }
+  details { margin: 6px 12px 12px; color: var(--muted); font-size: 12px; }
+  pre { white-space: pre-wrap; max-height: 260px; overflow: auto; background: var(--code); padding: 8px; border-radius: 6px; }
+
+  #main { flex: 1; display: flex; flex-direction: column; position: relative; min-width: 0; }
+  #screen { flex: 1; display: block; width: 100%; min-height: 0; cursor: grab; }
+  #floating { position: absolute; right: 12px; top: 12px; display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+  .stack { display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+    box-shadow: 0 2px 10px rgba(20,30,60,0.08); overflow: hidden; }
+  .stack button { border: none; border-radius: 0; width: 34px; height: 32px; padding: 0; font-size: 16px; }
+  .stack button + button { border-top: 1px solid var(--line); }
+  #viewPanel { display: none; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+    box-shadow: 0 6px 20px rgba(20,30,60,0.12); padding: 10px 12px; min-width: 180px; }
+  #viewPanel.open { display: block; }
+  #viewPanel label { display: flex; align-items: center; gap: 8px; padding: 4px 0; cursor: pointer; }
+  #viewPanel input[type=color] { width: 28px; height: 22px; border: 1px solid var(--line); border-radius: 4px; padding: 0; background: none; }
+  #viewPanel .swatchRow { display: flex; gap: 5px; margin: 2px 0 6px 0; }
+  #viewPanel .swatchRow span { width: 18px; height: 18px; border-radius: 4px; border: 1px solid var(--line); cursor: pointer; }
+  #console { flex: none; max-height: 110px; overflow: auto; margin: 0; padding: 8px 12px; border-radius: 0;
+    font: 12px ui-monospace, Menlo, monospace; background: #1d2230; color: #d6dbe6; }
+  #console:empty { display: none; }
+
+  #asmPane { width: 400px; flex: none; height: 100vh; min-height: 0; display: flex; flex-direction: column; background: #171a21; border-left: 1px solid #000; }
+  #asmPane.hidden { display: none; }
+  #asmHead { padding: 8px 10px; font-size: 12px; color: #8b93a7; border-bottom: 1px solid #262a33; display: flex; gap: 8px; align-items: center; }
+  #asmHead input { flex: 1; background: #20242d; border: 1px solid #323744; border-radius: 5px; color: #d6dbe6; font-size: 12px; padding: 3px 6px; }
+  #asm { flex: 1; min-height: 0; max-height: none; background: none; border-radius: 0; margin: 0; overflow: auto;
+    font: 11px/1.45 ui-monospace, Menlo, monospace; color: #c3c9d6; padding: 8px 10px; white-space: pre; }
+  #asm .label { color: #e5c07b; }
+  #asm .op { color: #61afef; }
+  #asm .hit { background: #4b4f2a; }
+
+  #palette { position: fixed; z-index: 10; background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    box-shadow: 0 8px 28px rgba(20,30,60,0.16); padding: 10px; width: 210px; font-size: 12px; }
+  #palette .swatches { display: flex; flex-wrap: wrap; gap: 7px; margin: 2px 0 8px; }
+  #palette .swatch { width: 22px; height: 22px; border-radius: 50%; cursor: pointer; box-shadow: 0 0 0 1px rgba(0,0,0,0.08); }
+  #palette .swatch.chosen { box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--ink); }
+  #palette > div:not(.swatches):not(.named) { color: var(--faint); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin: 6px 0 2px; }
+  #palette .named { display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 4px 6px; border-radius: 5px; }
+  #palette .named:hover { background: var(--soft); }
+  #palette .named span { width: 14px; height: 14px; border-radius: 50%; }
+  #palette button { margin-top: 8px; width: 100%; }
+</style>
+</head>
+<body>
+<div id="side">
+  <div id="brand">
+    <b>MeXpl</b>
+    <span class="spacer"></span>
+    <select id="example" title="open an example in a new workspace">
+      <option value="">open example…</option>
+      <option value="spirograph">spirograph</option>
+      <option value="hilbert">hilbert curve</option>
+      <option value="playground">math playground</option>
+      <option value="calculus">calculus and curves</option>
+      <option value="suzanne">suzanne ray tracer</option>
+      <option value="room">suzanne in a room</option>
+    </select>
+  </div>
+  <div id="tabs"></div>
+  <div id="bar">
+    <span class="segmented">
+      <label><input type="radio" name="target" value="riscv" checked>RISC-V</label>
+      <label><input type="radio" name="target" value="interp">interpreter</label>
+    </span>
+    <span id="status"></span>
+  </div>
+  <div id="document">
+    <div id="rows"></div>
+    <div id="addBar"><button id="addCode">+ code</button><button id="addMath">+ math</button><button id="importObj">import OBJ</button><input type="file" id="objFile" accept=".obj" style="display:none"></div>
+    <div id="error" class="error"></div>
+    <div id="undefinedBar" class="error"></div>
+    <div id="sliders"></div>
+    <details><summary>generated program</summary><pre id="source"></pre></details>
+  </div>
+</div>
+<div id="drag"></div>
+<div id="main">
+  <canvas id="screen"></canvas>
+  <div id="recordBar"><span id="recordText"></span><button id="recordButton">record GIF</button></div>
+  <div id="floating">
+    <div class="stack">
+      <button id="zoomIn" title="zoom in">+</button>
+      <button id="zoomOut" title="zoom out">&minus;</button>
+      <button id="fit" title="fit to curves">&#x2922;</button>
+      <button id="viewButton" title="view settings">&#9881;</button>
+    </div>
+    <div id="viewPanel">
+      <label><input type="checkbox" id="showGrid" checked> grid</label>
+      <label><input type="checkbox" id="showAxes" checked> axes and numbers</label>
+      <label><input type="checkbox" id="showValues" checked> values beside rows</label>
+      <label><input type="checkbox" id="showAsm" checked> assembly pane</label>
+      <label>background <input type="color" id="background" value="#ffffff"></label>
+      <div class="swatchRow" id="backgrounds"></div>
+    </div>
+  </div>
+  <pre id="console"></pre>
+</div>
+<div id="palette" style="display:none"></div>
+<div id="asmPane">
+  <div id="asmHead"><span id="asmCount">RISC-V</span><input id="asmFind" placeholder="find, e.g. fnG or fsqrt"></div>
+  <pre id="asm"></pre>
+</div>
+<script>
+var MQ = MathQuill.getInterface(2);
+var colors = ["#c74440", "#2d70b3", "#388c46", "#6042a6", "#fa7e19", "#000000"];
+var rows = [];
+var values = {};
+var defaults = {a: 1, b: 1, x_r: 1.73, y_r: 0.1, z_r: 0.2860874169406724, d_camx: 0, d_camy: 0, d_camz: 1,
+                o_pticaldistortion: 8, u: 1, R_s2: 1, d_s2: 1,
+                s_shift: 6.02, a_s: 434, R_s: 7.2, r_s: 4.3, d_s: -2, z_s: 0.5, a_mplitude: 2.5};
+var view = {cx: 0, cy: 0, scale: 120};
+var series = {};
+var timer = null;
+var running = false;
+
+var examples = {};
+examples.hilbert = [{"kind": "math", "latex": "n=6"}, {"kind": "math", "latex": "H_0=\\left[\\left[0,\\frac{1}{2},0\\right],\\left[\\frac{1}{2},0,0\\right],\\left[0,0,1\\right]\\right]"}, {"kind": "math", "latex": "H_1=\\left[\\left[\\frac{1}{2},0,0\\right],\\left[0,\\frac{1}{2},\\frac{1}{2}\\right],\\left[0,0,1\\right]\\right]"}, {"kind": "math", "latex": "H_2=\\left[\\left[\\frac{1}{2},0,\\frac{1}{2}\\right],\\left[0,\\frac{1}{2},\\frac{1}{2}\\right],\\left[0,0,1\\right]\\right]"}, {"kind": "math", "latex": "H_3=\\left[\\left[0,-\\frac{1}{2},1\\right],\\left[-\\frac{1}{2},0,\\frac{1}{2}\\right],\\left[0,0,1\\right]\\right]"}, {"kind": "math", "latex": "p=\\left[\\left[\\frac{1}{2}\\right],\\left[\\frac{1}{2}\\right],\\left[1\\right]\\right]"}, {"kind": "math", "latex": "c_{hil}=\\operatorname{hsv}\\left(300\\left(x+y\\right)/2,0.75,1\\right)"}, {"kind": "code", "text": "collection maps matrix[] = [H_0, H_1, H_2, H_3];\n\ndraw : interger(matrix M, interger k) {\n    if (k == 0) {\n        collection q matrix[[]] = M * p;\n        plot(get q[[0,0]], get q[[1,0]]);\n        return 0;\n    }\n    foreach (H ∆ maps) {\n        draw(M * H, k - 1);\n    }\n    return 0;\n}\n\ndraw(eye(3), n);", "shade": "c_hil"}];
+examples.playground = [{"kind": "math", "latex": "k=2"}, {"kind": "math", "latex": "A=\\left[\\left[1,2\\right],\\left[3,4\\right]\\right]"}, {"kind": "math", "latex": "A^{-1}"}, {"kind": "math", "latex": "\\det\\left(A\\right)"}, {"kind": "math", "latex": "A\\cdot A^{-1}"}, {"kind": "math", "latex": "\\frac{k^{3}+1}{2}"}, {"kind": "math", "latex": "c_{warm}=\\operatorname{hsv}\\left(20,0.8,1\\right)"}, {"kind": "math", "latex": "c_{cool}=\\operatorname{rgb}\\left(40,110,220\\right)"}, {"kind": "math", "latex": "g_{x}\\left(x\\right)=\\sin\\left(x\\right)"}, {"kind": "math", "latex": "c_{wave}=\\operatorname{rgb}\\left(40,110+100g_{x},128+127g_{x}\\right)"}, {"kind": "math", "latex": "y=k\\sin\\left(x\\right)", "shade": "c_wave"}, {"kind": "code", "text": "for (var i interger = 0; i <= 400)¬+ {\n    var angle dos = i * 6.283185307179586 / 400.0;\n    penColor(hsv(i * 0.9, 1.0, 1.0));\n    plot(k * cos(angle), k * sin(angle));\n}"}];
+examples.calculus = [{"kind": "math", "latex": "a=1"}, {"kind": "math", "latex": "f\\left(x\\right)=\\sin\\left(x\\right)\\cdot x+a\\cdot x^{2}"}, {"kind": "math", "latex": "f'\\left(x\\right)"}, {"kind": "math", "latex": "\\frac{d}{dx}\\left(x^{3}-3x\\right)"}, {"kind": "math", "latex": "x+x+3x\\cdot x-x^{2}"}, {"kind": "math", "latex": "x^{2}+\\frac{y^{2}}{4}=a"}, {"kind": "math", "latex": "y<\\cos\\left(x\\right)-2"}, {"kind": "math", "latex": "r=1+\\cos\\left(\\theta\\right)", "tMin": "0", "tMax": "2\\pi"}];
+var suzanneHead = [{"kind": "math", "latex": "a=0.5"}, {"kind": "math", "latex": "b=0.25"}, {"kind": "math", "latex": "R_{y}=\\left[\\left[\\cos\\left(a\\right),0,-\\sin\\left(a\\right)\\right],\\left[0,1,0\\right],\\left[\\sin\\left(a\\right),0,\\cos\\left(a\\right)\\right]\\right]", "noValue": true}, {"kind": "math", "latex": "R_{x}=\\left[\\left[1,0,0\\right],\\left[0,\\cos\\left(b\\right),\\sin\\left(b\\right)\\right],\\left[0,-\\sin\\left(b\\right),\\cos\\left(b\\right)\\right]\\right]", "noValue": true}, {"kind": "math", "latex": "R=R_{y}\\cdot R_{x}", "noValue": true}, {"kind": "math", "latex": "t_{int}=\\left[0.95,0.62,0.35\\right]", "noValue": true}, {"kind": "code", "text": "var lightX dos = 0.0 - 0.45;\nvar lightY dos = 0.6;\nvar lightZ dos = 0.66;\ncollection tint matrix[[]] = t_int;"}];
+var roomTracer = "var wide interger = 120;\nvar tall interger = 90;\nvar samples interger = 1;\nvar shadowRays interger = 2;\nvar bounces interger = 3;\nvar lens dos = 0.62;\nvar aspect dos = wide * 1.0 / tall;\nvar camX dos = 0.0;\nvar camY dos = 0.2;\nvar camZ dos = 4.4;\n\nvar roomLeft dos = 0.0 - 3.6;\nvar roomRight dos = 3.6;\nvar roomFloor dos = 0.0 - 1.3;\nvar roomCeiling dos = 3.4;\nvar roomBack dos = 0.0 - 3.5;\nvar roomFront dos = 5.2;\n\nvar lampX dos = 0.0 - 1.6;\nvar lampY dos = 1.75;\nvar lampZ dos = 0.4;\nvar lampSize dos = 0.38;\nvar lampPower dos = 9.0;\n\nvar offX dos = 0.0;\nvar offY dos = 0.0 - 0.15;\nvar offZ dos = 0.0;\n\nvar seed dos = 7.0;\n\nrand : dos() {\n    var product dos = seed * 16807.0;\n    var whole interger = product / 2147483647.0 - 0.5;\n    seed = product - whole * 2147483647.0;\n    return seed / 2147483647.0;\n}\n\ncollection N matrix[[]] = 3`vertexCount;\nfor (var t interger = 0; t < faceCount)¬+ {\n    var a interger = get F[[t,0]];\n    var b interger = get F[[t,1]];\n    var c interger = get F[[t,2]];\n    var ux dos = get V[[b,0]] - get V[[a,0]];\n    var uy dos = get V[[b,1]] - get V[[a,1]];\n    var uz dos = get V[[b,2]] - get V[[a,2]];\n    var vx dos = get V[[c,0]] - get V[[a,0]];\n    var vy dos = get V[[c,1]] - get V[[a,1]];\n    var vz dos = get V[[c,2]] - get V[[a,2]];\n    var nx dos = uy * vz - uz * vy;\n    var ny dos = uz * vx - ux * vz;\n    var nz dos = ux * vy - uy * vx;\n    N[[a,0]] = get N[[a,0]] + nx;\n    N[[a,1]] = get N[[a,1]] + ny;\n    N[[a,2]] = get N[[a,2]] + nz;\n    N[[b,0]] = get N[[b,0]] + nx;\n    N[[b,1]] = get N[[b,1]] + ny;\n    N[[b,2]] = get N[[b,2]] + nz;\n    N[[c,0]] = get N[[c,0]] + nx;\n    N[[c,1]] = get N[[c,1]] + ny;\n    N[[c,2]] = get N[[c,2]] + nz;\n}\n\ncollection stack matrix[[]] = 64`1;\nvar hitKind interger = 0;\nvar hitWall interger = 0;\nvar hitT dos = 0.0;\nvar hitNX dos = 0.0;\nvar hitNY dos = 0.0;\nvar hitNZ dos = 0.0;\nvar hitGX dos = 0.0;\nvar hitGY dos = 0.0;\nvar hitGZ dos = 0.0;\nvar hitFace interger = 0 - 1;\nvar skipFace interger = 0 - 1;\n\nhitMonkey : dos(dos ox, dos oy, dos oz, dos dx, dos dy, dos dz, dos best) {\n    var px dos = ox - offX;\n    var py dos = oy - offY;\n    var pz dos = oz - offZ;\n    var mox dos = px * get R[[0,0]] + py * get R[[0,1]] + pz * get R[[0,2]];\n    var moy dos = px * get R[[1,0]] + py * get R[[1,1]] + pz * get R[[1,2]];\n    var moz dos = px * get R[[2,0]] + py * get R[[2,1]] + pz * get R[[2,2]];\n    var mdx dos = dx * get R[[0,0]] + dy * get R[[0,1]] + dz * get R[[0,2]];\n    var mdy dos = dx * get R[[1,0]] + dy * get R[[1,1]] + dz * get R[[1,2]];\n    var mdz dos = dx * get R[[2,0]] + dy * get R[[2,1]] + dz * get R[[2,2]];\n    var ix dos = 1000000000000.0;\n    var iy dos = 1000000000000.0;\n    var iz dos = 1000000000000.0;\n    if (mdx * mdx > 0.0) { ix = 1.0 / mdx; }\n    if (mdy * mdy > 0.0) { iy = 1.0 / mdy; }\n    if (mdz * mdz > 0.0) { iz = 1.0 / mdz; }\n\n    var face interger = 0 - 1;\n    var hitU dos = 0.0;\n    var hitV dos = 0.0;\n    stack[[0,0]] = 0;\n    var top interger = 1;\n    while (top > 0) {\n        top = top - 1;\n        var node interger = get stack[[0,top]];\n        var x1 dos = (get B[[node,0]] - mox) * ix;\n        var x2 dos = (get B[[node,3]] - mox) * ix;\n        var y1 dos = (get B[[node,1]] - moy) * iy;\n        var y2 dos = (get B[[node,4]] - moy) * iy;\n        var z1 dos = (get B[[node,2]] - moz) * iz;\n        var z2 dos = (get B[[node,5]] - moz) * iz;\n        var enter dos = x1;\n        var leave dos = x2;\n        if (x2 < x1) {\n            enter = x2;\n            leave = x1;\n        }\n        if (y1 < y2) {\n            if (y1 > enter) { enter = y1; }\n            if (y2 < leave) { leave = y2; }\n        } else {\n            if (y2 > enter) { enter = y2; }\n            if (y1 < leave) { leave = y1; }\n        }\n        if (z1 < z2) {\n            if (z1 > enter) { enter = z1; }\n            if (z2 < leave) { leave = z2; }\n        } else {\n            if (z2 > enter) { enter = z2; }\n            if (z1 < leave) { leave = z1; }\n        }\n        if (leave >= enter & leave > 0.0 & enter < best) {\n            var count interger = get B[[node,7]];\n            if (count > 0) {\n                var first interger = get B[[node,6]];\n                for (var f interger = first; f < first + count)¬+ {\n                    var a interger = get F[[f,0]];\n                    var b interger = get F[[f,1]];\n                    var c interger = get F[[f,2]];\n                    var e1x dos = get V[[b,0]] - get V[[a,0]];\n                    var e1y dos = get V[[b,1]] - get V[[a,1]];\n                    var e1z dos = get V[[b,2]] - get V[[a,2]];\n                    var e2x dos = get V[[c,0]] - get V[[a,0]];\n                    var e2y dos = get V[[c,1]] - get V[[a,1]];\n                    var e2z dos = get V[[c,2]] - get V[[a,2]];\n                    var qx dos = mdy * e2z - mdz * e2y;\n                    var qy dos = mdz * e2x - mdx * e2z;\n                    var qz dos = mdx * e2y - mdy * e2x;\n                    var det dos = e1x * qx + e1y * qy + e1z * qz;\n                    if (det * det > 0.000000000001) {\n                        var inv dos = 1.0 / det;\n                        var sx dos = mox - get V[[a,0]];\n                        var sy dos = moy - get V[[a,1]];\n                        var sz dos = moz - get V[[a,2]];\n                        var u dos = (sx * qx + sy * qy + sz * qz) * inv;\n                        if (u >= 0.0 & u <= 1.0) {\n                            var rx dos = sy * e1z - sz * e1y;\n                            var ry dos = sz * e1x - sx * e1z;\n                            var rz dos = sx * e1y - sy * e1x;\n                            var v dos = (mdx * rx + mdy * ry + mdz * rz) * inv;\n                            if (v >= 0.0 & u + v <= 1.0) {\n                                var along dos = (e2x * rx + e2y * ry + e2z * rz) * inv;\n                                if (along > 0.0001 & along < best & f =/= skipFace) {\n                                    best = along;\n                                    face = f;\n                                    hitU = u;\n                                    hitV = v;\n                                }\n                            }\n                        }\n                    }\n                }\n            } else {\n                stack[[0,top]] = get B[[node,6]];\n                stack[[0,top + 1]] = get B[[node,8]];\n                top = top + 2;\n            }\n        }\n    }\n\n    if (face >= 0) {\n        var a interger = get F[[face,0]];\n        var b interger = get F[[face,1]];\n        var c interger = get F[[face,2]];\n        var w dos = 1.0 - hitU - hitV;\n        var mx dos = w * get N[[a,0]] + hitU * get N[[b,0]] + hitV * get N[[c,0]];\n        var my dos = w * get N[[a,1]] + hitU * get N[[b,1]] + hitV * get N[[c,1]];\n        var mz dos = w * get N[[a,2]] + hitU * get N[[b,2]] + hitV * get N[[c,2]];\n        var wx dos = mx * get R[[0,0]] + my * get R[[1,0]] + mz * get R[[2,0]];\n        var wy dos = mx * get R[[0,1]] + my * get R[[1,1]] + mz * get R[[2,1]];\n        var wz dos = mx * get R[[0,2]] + my * get R[[1,2]] + mz * get R[[2,2]];\n        var size dos = (wx * wx + wy * wy + wz * wz) î 0.5;\n        hitNX = wx / size;\n        hitNY = wy / size;\n        hitNZ = wz / size;\n        var e1x dos = get V[[b,0]] - get V[[a,0]];\n        var e1y dos = get V[[b,1]] - get V[[a,1]];\n        var e1z dos = get V[[b,2]] - get V[[a,2]];\n        var e2x dos = get V[[c,0]] - get V[[a,0]];\n        var e2y dos = get V[[c,1]] - get V[[a,1]];\n        var e2z dos = get V[[c,2]] - get V[[a,2]];\n        var gx dos = e1y * e2z - e1z * e2y;\n        var gy dos = e1z * e2x - e1x * e2z;\n        var gz dos = e1x * e2y - e1y * e2x;\n        var hx dos = gx * get R[[0,0]] + gy * get R[[1,0]] + gz * get R[[2,0]];\n        var hy dos = gx * get R[[0,1]] + gy * get R[[1,1]] + gz * get R[[2,1]];\n        var hz dos = gx * get R[[0,2]] + gy * get R[[1,2]] + gz * get R[[2,2]];\n        var gsize dos = (hx * hx + hy * hy + hz * hz) î 0.5;\n        hitGX = hx / gsize;\n        hitGY = hy / gsize;\n        hitGZ = hz / gsize;\n        hitFace = face;\n        hitKind = 2;\n        hitT = best;\n    }\n    return best;\n}\n\nhitScene : interger(dos ox, dos oy, dos oz, dos dx, dos dy, dos dz) {\n    var best dos = 1000000.0;\n    hitKind = 1;\n    hitWall = 0;\n    if (dx > 0.0) {\n        best = (roomRight - ox) / dx;\n        hitWall = 1;\n    }\n    if (dx < 0.0) {\n        best = (roomLeft - ox) / dx;\n        hitWall = 0;\n    }\n    if (dy > 0.0) {\n        var up dos = (roomCeiling - oy) / dy;\n        if (up < best) {\n            best = up;\n            hitWall = 3;\n        }\n    }\n    if (dy < 0.0) {\n        var down dos = (roomFloor - oy) / dy;\n        if (down < best) {\n            best = down;\n            hitWall = 2;\n        }\n    }\n    if (dz > 0.0) {\n        var ahead dos = (roomFront - oz) / dz;\n        if (ahead < best) {\n            best = ahead;\n            hitWall = 5;\n        }\n    }\n    if (dz < 0.0) {\n        var behind dos = (roomBack - oz) / dz;\n        if (behind < best) {\n            best = behind;\n            hitWall = 4;\n        }\n    }\n    hitT = best;\n    hitNX = 0.0;\n    hitNY = 0.0;\n    hitNZ = 0.0;\n    if (hitWall == 0) { hitNX = 1.0; }\n    if (hitWall == 1) { hitNX = 0.0 - 1.0; }\n    if (hitWall == 2) { hitNY = 1.0; }\n    if (hitWall == 3) { hitNY = 0.0 - 1.0; }\n    if (hitWall == 4) { hitNZ = 1.0; }\n    if (hitWall == 5) { hitNZ = 0.0 - 1.0; }\n    hitGX = hitNX;\n    hitGY = hitNY;\n    hitGZ = hitNZ;\n    hitFace = 0 - 1;\n\n    var cx dos = ox - lampX;\n    var cy dos = oy - lampY;\n    var cz dos = oz - lampZ;\n    var half dos = cx * dx + cy * dy + cz * dz;\n    var gap dos = half * half - (cx * cx + cy * cy + cz * cz - lampSize * lampSize);\n    if (gap > 0.0) {\n        var near dos = 0.0 - half - (gap î 0.5);\n        if (near > 0.0001 & near < hitT) {\n            hitT = near;\n            hitKind = 3;\n        }\n    }\n\n    hitMonkey(ox, oy, oz, dx, dy, dz, hitT);\n    return hitKind;\n}\n\nprint(\"prefix n\\n\");\nimage(wide, tall, 0.0 - 2.0 * aspect, 2.0 * aspect, 0.0 - 2.0, 2.0);\nvar total interger = wide * tall;\ncollection order matrix[[]] = total`1;\nfor (var k interger = 0; k < total)¬+ {\n    order[[0,k]] = k;\n}\nseed = 12345.0;\nfor (var k interger = total - 1; k > 0)¬- {\n    var pick interger = rand() * (k + 1) - 0.5;\n    if (pick > k) {\n        pick = k;\n    }\n    var swap dos = get order[[0,k]];\n    order[[0,k]] = get order[[0,pick]];\n    order[[0,pick]] = swap;\n}\nvar shown interger = n;\nif (shown > total) {\n    shown = total;\n}\nfor (var step interger = 0; step < shown)¬+ {\n    var spot interger = get order[[0,step]];\n    var i interger = spot %% wide;\n    var j interger = spot / wide;\n    {\n        seed = 1.0 + i * 7919.0 + j * 104729.0;\n        rand();\n        rand();\n        var sumR dos = 0.0;\n        var sumG dos = 0.0;\n        var sumB dos = 0.0;\n        for (var sample interger = 0; sample < samples)¬+ {\n            var ox dos = camX;\n            var oy dos = camY;\n            var oz dos = camZ;\n            var dx dos = (2.0 * (i + rand()) / wide - 1.0) * aspect * lens;\n            var dy dos = (1.0 - 2.0 * (j + rand()) / tall) * lens;\n            var dz dos = 0.0 - 1.0;\n            var length dos = (dx * dx + dy * dy + dz * dz) î 0.5;\n            dx = dx / length;\n            dy = dy / length;\n            dz = dz / length;\n            var colorR dos = 0.0;\n            var colorG dos = 0.0;\n            var colorB dos = 0.0;\n            var weightR dos = 1.0;\n            var weightG dos = 1.0;\n            var weightB dos = 1.0;\n            skipFace = 0 - 1;\n            for (var bounce interger = 0; bounce <= bounces)¬+ {\n                var kind interger = hitScene(ox, oy, oz, dx, dy, dz);\n                skipFace = 0 - 1;\n                if (kind == 3) {\n                    colorR = colorR + weightR * 1.0;\n                    colorG = colorG + weightG * 0.95;\n                    colorB = colorB + weightB * 0.85;\n                    break;\n                }\n                var px dos = ox + dx * hitT;\n                var py dos = oy + dy * hitT;\n                var pz dos = oz + dz * hitT;\n                var nx dos = hitNX;\n                var ny dos = hitNY;\n                var nz dos = hitNZ;\n                var gx dos = hitGX;\n                var gy dos = hitGY;\n                var gz dos = hitGZ;\n                var from interger = hitFace;\n                if (gx * dx + gy * dy + gz * dz > 0.0) {\n                    gx = 0.0 - gx;\n                    gy = 0.0 - gy;\n                    gz = 0.0 - gz;\n                }\n                if (nx * gx + ny * gy + nz * gz < 0.0) {\n                    nx = 0.0 - nx;\n                    ny = 0.0 - ny;\n                    nz = 0.0 - nz;\n                }\n                var albedoR dos = 0.72;\n                var albedoG dos = 0.72;\n                var albedoB dos = 0.72;\n                var mirror dos = 0.0;\n                var fuzz dos = 0.0;\n                if (kind == 2) {\n                    albedoR = get tint[[0,0]];\n                    albedoG = get tint[[0,1]];\n                    albedoB = get tint[[0,2]];\n                    mirror = 0.3;\n                    fuzz = 0.08;\n                } else {\n                    if (hitWall == 0) {\n                        albedoR = 0.75;\n                        albedoG = 0.22;\n                        albedoB = 0.2;\n                    }\n                    if (hitWall == 1) {\n                        albedoR = 0.2;\n                        albedoG = 0.42;\n                        albedoB = 0.75;\n                    }\n                    if (hitWall == 2) {\n                        var cell interger = (px + 100.0) * 0.8 + 0.5;\n                        var other interger = (pz + 100.0) * 0.8 + 0.5;\n                        if ((cell + other) %% 2 == 0) {\n                            albedoR = 0.82;\n                            albedoG = 0.8;\n                            albedoB = 0.76;\n                        } else {\n                            albedoR = 0.3;\n                            albedoG = 0.3;\n                            albedoB = 0.32;\n                        }\n                        mirror = 0.22;\n                    }\n                }\n\n                var shine dos = 0.0;\n                for (var ray interger = 0; ray < shadowRays)¬+ {\n                    var height dos = 2.0 * rand() - 1.0;\n                    var turn dos = 6.283185307179586 * rand();\n                    var ring dos = (1.0 - height * height) î 0.5;\n                    var qx dos = lampX + lampSize * ring * cos(turn);\n                    var qy dos = lampY + lampSize * height;\n                    var qz dos = lampZ + lampSize * ring * sin(turn);\n                    var lx dos = qx - px;\n                    var ly dos = qy - py;\n                    var lz dos = qz - pz;\n                    var distance dos = (lx * lx + ly * ly + lz * lz) î 0.5;\n                    lx = lx / distance;\n                    ly = ly / distance;\n                    lz = lz / distance;\n                    var facing dos = nx * lx + ny * ly + nz * lz;\n                    if (facing > 0.0 & gx * lx + gy * ly + gz * lz > 0.0) {\n                        skipFace = from;\n                        var blocked dos = hitMonkey(px + gx * 0.002, py + gy * 0.002, pz + gz * 0.002, lx, ly, lz, distance - lampSize);\n                        skipFace = 0 - 1;\n                        if (blocked >= distance - lampSize) {\n                            shine = shine + lampPower * facing / (distance * distance);\n                        }\n                    }\n                }\n                shine = shine / shadowRays + 0.1;\n                var keep dos = 1.0 - mirror;\n                colorR = colorR + weightR * keep * albedoR * shine;\n                colorG = colorG + weightG * keep * albedoG * shine * 0.97;\n                colorB = colorB + weightB * keep * albedoB * shine * 0.92;\n                if (mirror == 0.0) {\n                    break;\n                }\n                weightR = weightR * mirror * (0.5 + 0.5 * albedoR);\n                weightG = weightG * mirror * (0.5 + 0.5 * albedoG);\n                weightB = weightB * mirror * (0.5 + 0.5 * albedoB);\n                var dot dos = dx * nx + dy * ny + dz * nz;\n                dx = dx - 2.0 * dot * nx + fuzz * (2.0 * rand() - 1.0);\n                dy = dy - 2.0 * dot * ny + fuzz * (2.0 * rand() - 1.0);\n                dz = dz - 2.0 * dot * nz + fuzz * (2.0 * rand() - 1.0);\n                var outward dos = dx * gx + dy * gy + dz * gz;\n                if (outward < 0.0) {\n                    dx = dx - 2.0 * outward * gx;\n                    dy = dy - 2.0 * outward * gy;\n                    dz = dz - 2.0 * outward * gz;\n                }\n                var stretch dos = (dx * dx + dy * dy + dz * dz) î 0.5;\n                dx = dx / stretch;\n                dy = dy / stretch;\n                dz = dz / stretch;\n                ox = px + gx * 0.002;\n                oy = py + gy * 0.002;\n                oz = pz + gz * 0.002;\n                skipFace = from;\n            }\n            sumR = sumR + colorR;\n            sumG = sumG + colorG;\n            sumB = sumB + colorB;\n        }\n        sumR = sumR / samples;\n        sumG = sumG / samples;\n        sumB = sumB / samples;\n        if (sumR > 1.0) { sumR = 1.0; }\n        if (sumG > 1.0) { sumG = 1.0; }\n        if (sumB > 1.0) { sumB = 1.0; }\n        pixel(i, j, 255.0 * (sumR î 0.5), 255.0 * (sumG î 0.5), 255.0 * (sumB î 0.5));\n    }\n}\n";
+var suzanneTracer = "var wide interger = 240;\nvar tall interger = 180;\nvar distance dos = 4.2;\nvar lens dos = 0.42;\nvar aspect dos = wide * 1.0 / tall;\n\ncollection P matrix[[]] = V * R;\ncollection N matrix[[]] = 3`vertexCount;\ncollection depth matrix[[]] = wide`tall;\ncollection shade matrix[[]] = wide`tall;\n\nfor (var t interger = 0; t < faceCount)¬+ {\n    var a interger = get F[[t,0]];\n    var b interger = get F[[t,1]];\n    var c interger = get F[[t,2]];\n    var ux dos = get P[[b,0]] - get P[[a,0]];\n    var uy dos = get P[[b,1]] - get P[[a,1]];\n    var uz dos = get P[[b,2]] - get P[[a,2]];\n    var vx dos = get P[[c,0]] - get P[[a,0]];\n    var vy dos = get P[[c,1]] - get P[[a,1]];\n    var vz dos = get P[[c,2]] - get P[[a,2]];\n    var nx dos = uy * vz - uz * vy;\n    var ny dos = uz * vx - ux * vz;\n    var nz dos = ux * vy - uy * vx;\n    N[[a,0]] = get N[[a,0]] + nx;\n    N[[a,1]] = get N[[a,1]] + ny;\n    N[[a,2]] = get N[[a,2]] + nz;\n    N[[b,0]] = get N[[b,0]] + nx;\n    N[[b,1]] = get N[[b,1]] + ny;\n    N[[b,2]] = get N[[b,2]] + nz;\n    N[[c,0]] = get N[[c,0]] + nx;\n    N[[c,1]] = get N[[c,1]] + ny;\n    N[[c,2]] = get N[[c,2]] + nz;\n}\n\nscreenColumn : dos(interger k) {\n    return ((get P[[k,0]] / (distance - get P[[k,2]])) / (aspect * lens) + 1.0) * wide / 2.0 - 0.5;\n}\n\nscreenRow : dos(interger k) {\n    return (1.0 - (get P[[k,1]] / (distance - get P[[k,2]])) / lens) * tall / 2.0 - 0.5;\n}\n\nfor (var t interger = 0; t < faceCount)¬+ {\n    var a interger = get F[[t,0]];\n    var b interger = get F[[t,1]];\n    var c interger = get F[[t,2]];\n    var ia dos = screenColumn(a);\n    var ib dos = screenColumn(b);\n    var ic dos = screenColumn(c);\n    var ja dos = screenRow(a);\n    var jb dos = screenRow(b);\n    var jc dos = screenRow(c);\n    var left dos = ia;\n    var right dos = ia;\n    if (ib < left) { left = ib; }\n    if (ic < left) { left = ic; }\n    if (ib > right) { right = ib; }\n    if (ic > right) { right = ic; }\n    var low dos = ja;\n    var high dos = ja;\n    if (jb < low) { low = jb; }\n    if (jc < low) { low = jc; }\n    if (jb > high) { high = jb; }\n    if (jc > high) { high = jc; }\n    var i0 interger = left - 0.5;\n    var i1 interger = right + 0.5;\n    var j0 interger = low - 0.5;\n    var j1 interger = high + 0.5;\n    if (i0 < 0) { i0 = 0; }\n    if (j0 < 0) { j0 = 0; }\n    if (i1 > wide - 1) { i1 = wide - 1; }\n    if (j1 > tall - 1) { j1 = tall - 1; }\n\n    var e1x dos = get P[[b,0]] - get P[[a,0]];\n    var e1y dos = get P[[b,1]] - get P[[a,1]];\n    var e1z dos = get P[[b,2]] - get P[[a,2]];\n    var e2x dos = get P[[c,0]] - get P[[a,0]];\n    var e2y dos = get P[[c,1]] - get P[[a,1]];\n    var e2z dos = get P[[c,2]] - get P[[a,2]];\n    var sx dos = 0.0 - get P[[a,0]];\n    var sy dos = 0.0 - get P[[a,1]];\n    var sz dos = distance - get P[[a,2]];\n\n    for (var j interger = j0; j <= j1)¬+ {\n        for (var i interger = i0; i <= i1)¬+ {\n            var dx dos = (2.0 * (i + 0.5) / wide - 1.0) * aspect * lens;\n            var dy dos = (1.0 - 2.0 * (j + 0.5) / tall) * lens;\n            var dz dos = 0.0 - 1.0;\n            var px dos = dy * e2z - dz * e2y;\n            var py dos = dz * e2x - dx * e2z;\n            var pz dos = dx * e2y - dy * e2x;\n            var det dos = e1x * px + e1y * py + e1z * pz;\n            if (det * det > 0.000000000001) {\n                var inv dos = 1.0 / det;\n                var u dos = (sx * px + sy * py + sz * pz) * inv;\n                if (u >= 0.0 & u <= 1.0) {\n                    var qx dos = sy * e1z - sz * e1y;\n                    var qy dos = sz * e1x - sx * e1z;\n                    var qz dos = sx * e1y - sy * e1x;\n                    var v dos = (dx * qx + dy * qy + dz * qz) * inv;\n                    if (v >= 0.0 & u + v <= 1.0) {\n                        var hit dos = (e2x * qx + e2y * qy + e2z * qz) * inv;\n                        if (hit > 0.0 & 1.0 / hit > get depth[[j,i]]) {\n                            depth[[j,i]] = 1.0 / hit;\n                            var w dos = 1.0 - u - v;\n                            var mx dos = w * get N[[a,0]] + u * get N[[b,0]] + v * get N[[c,0]];\n                            var my dos = w * get N[[a,1]] + u * get N[[b,1]] + v * get N[[c,1]];\n                            var mz dos = w * get N[[a,2]] + u * get N[[b,2]] + v * get N[[c,2]];\n                            var size dos = (mx * mx + my * my + mz * mz) î 0.5;\n                            mx = mx / size;\n                            my = my / size;\n                            mz = mz / size;\n                            if (mx * dx + my * dy + mz * dz > 0.0) {\n                                mx = 0.0 - mx;\n                                my = 0.0 - my;\n                                mz = 0.0 - mz;\n                            }\n                            var light dos = mx * lightX + my * lightY + mz * lightZ;\n                            if (light < 0.0) { light = 0.0; }\n                            var facing dos = 0.0 - (mx * dx + my * dy + mz * dz) / ((dx * dx + dy * dy + 1.0) î 0.5);\n                            var rim dos = (1.0 - facing) î 3;\n                            shade[[j,i]] = 0.12 + 0.75 * light + 0.35 * rim;\n                        }\n                    }\n                }\n            }\n        }\n    }\n}\n\nimage(wide, tall, 0.0 - 2.0 * aspect, 2.0 * aspect, 0.0 - 2.0, 2.0);\nfor (var j interger = 0; j < tall)¬+ {\n    for (var i interger = 0; i < wide)¬+ {\n        if (get depth[[j,i]] > 0.0) {\n            var s dos = get shade[[j,i]];\n            pixel(i, j, 255.0 * s * get tint[[0,0]], 255.0 * s * get tint[[0,1]], 255.0 * s * get tint[[0,2]]);\n        }\n    }\n}\n";
+
+examples.spirograph = [
+  {kind: "code", text: "var turns interger = 3;\nprint(\"drawing \", turns, \" turns of the spirograph\\n\");"},
+  {kind: "math", latex: "g\\left(x_{c},y_{c},z_{c}\\right)=\\frac{\\left(\\left(\\left(a\\sqrt{x_{c}^{2}+y_{c}^{2}}\\cos\\left(\\arctan\\left(y_{c},x_{c}\\right)+x_{r}\\right)\\right)\\cdot\\cos\\left(z_{r}\\right)d_{camz}-\\left(\\left(\\sqrt{x_{c}^{2}+y_{c}^{2}}\\sin\\left(\\arctan\\left(y_{c},x_{c}\\right)+x_{r}\\right)\\cdot\\sin\\left(y_{r}\\right)+z_{c}b\\cos\\left(y_{r}\\right)\\right)\\cdot\\sin\\left(z_{r}\\right)d_{camz}\\right)+d_{camx}\\right)o_{pticaldistortion}^{u},o_{pticaldistortion}^{u}\\left(d_{camy}+\\left(\\left(a\\sqrt{x_{c}^{2}+y_{c}^{2}}\\cos\\left(\\arctan\\left(y_{c},x_{c}\\right)+x_{r}\\right)\\right)\\sin\\left(z_{r}\\right)d_{camz}+d_{camz}\\cos\\left(z_{r}\\right)\\left(\\left(\\sqrt{x_{c}^{2}+y_{c}^{2}}\\sin\\left(\\arctan\\left(y_{c},x_{c}\\right)+x_{r}\\right)\\cdot\\sin\\left(y_{r}\\right)+z_{c}b\\cos\\left(y_{r}\\right)\\right)\\right)\\right)\\right)\\right)}{\\left(o_{pticaldistortion}^{u}+\\left(\\left(\\sin\\left(\\arctan\\left(y_{c},x_{c}\\right)+x_{r}\\right)\\cos\\left(y_{r}\\right)\\sqrt{x_{c}^{2}+y_{c}^{2}}-\\sin\\left(y_{r}\\right)z_{c}\\right)\\right)\\right)^{u}}\\ \\left\\{o_{pticaldistortion}^{u}-\\left(\\left(\\sin\\left(\\arctan\\left(y_{c},x_{c}\\right)+x_{r}\\right)\\cos\\left(y_{r}\\right)\\sqrt{x_{c}^{2}+y_{c}^{2}}-\\sin\\left(y_{r}\\right)z_{c}\\right)\\right)+-1000u+1000>0\\right\\}"},
+  {kind: "math", latex: "g\\left(\\left(R_{s}-r_{s}\\right)\\sin\\left(\\frac{r_{s}t}{R_{s}}\\right)+d_{s}\\sin\\left(\\left(1-\\frac{r_{s}}{R_{s}}\\right)t\\right),-\\left(R_{s}-r_{s}\\right)\\cos\\left(\\frac{r_{s}t}{R_{s}}\\right)+d_{s}\\cos\\left(\\left(1-\\frac{r_{s}}{R_{s}}\\right)t\\right),a_{mplitude}\\cos\\left(z_{s}t+s_{shift}\\right)\\right)", tMin: "-a_{s}", tMax: "a_{s}"},
+  {kind: "code", text: "for (var k interger = 0; k <= 200)¬+ {\n    var angle dos = k * 6.283185307179586 / 200.0;\n    plot(4.0 * cos(angle), 4.0 * sin(angle));\n}"}
+];
+
+var settings = {grid: true, axes: true, background: "#ffffff"};
+var workspaces = [];
+var active = 0;
+var saveTimer = null;
+
+function build(blocks) {
+  while (rows.length > 0) rows.pop().element.remove();
+  for (var j = 0; j < blocks.length; j++) {
+    var last = rows[rows.length - 1];
+    var made = blocks[j].kind === "code" ? addCode(blocks[j].text, last) : addRow(blocks[j], last);
+    if (blocks[j].shade) made.color = {shader: blocks[j].shade};
+    if (blocks[j].color) made.color = blocks[j].color;
+    if (blocks[j].noValue) made.noValue = true;
+    if (blocks[j].hidden) {
+      made.hidden = true;
+      made.dot.className = "dot off";
+    }
+  }
+  recolor();
+}
+
+function snapshot() {
+  var blocks = [];
+  for (var i = 0; i < rows.length; i++) {
+    var entry = rows[i];
+    var block = entry.kind === "code" ? {kind: "code", text: entry.area.value}
+        : {kind: "math", latex: entry.field.latex(), tMin: entry.tMin.latex(), tMax: entry.tMax.latex()};
+    if (entry.color) block.color = entry.color;
+    if (entry.hidden) block.hidden = true;
+    if (entry.noValue) block.noValue = true;
+    blocks.push(block);
+  }
+  return {
+    name: workspaces[active] ? workspaces[active].name : "untitled",
+    blocks: blocks,
+    values: JSON.parse(JSON.stringify(values)),
+    forced: JSON.parse(JSON.stringify(forcedSliders)),
+    view: {cx: view.cx, cy: view.cy, scale: view.scale},
+    settings: JSON.parse(JSON.stringify(settings))
+  };
+}
+
+function saveSoon() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(save, 300);
+}
+
+function save() {
+  if (workspaces.length === 0) return;
+  workspaces[active] = snapshot();
+  try {
+    localStorage.setItem("mexplainerth.workspaces", JSON.stringify(workspaces));
+    localStorage.setItem("mexplainerth.active", String(active));
+  } catch (e) {
+  }
+}
+
+function openWorkspace(index) {
+  active = index;
+  var space = workspaces[index];
+  build(space.blocks);
+  values = JSON.parse(JSON.stringify(space.values || {}));
+  forcedSliders = JSON.parse(JSON.stringify(space.forced || {}));
+  settings = {grid: true, axes: true, background: "#ffffff"};
+  if (space.settings) for (var key in space.settings) settings[key] = space.settings[key];
+  document.getElementById("sliders").innerHTML = "";
+  document.getElementById("console").textContent = "";
+  series = {};
+  if (space.view) {
+    view = {cx: space.view.cx, cy: space.view.cy, scale: space.view.scale};
+    wantFit = false;
+  } else {
+    wantFit = true;
+  }
+  showSettings();
+  tabs();
+  draw();
+  schedule();
+}
+
+function switchTo(index) {
+  save();
+  openWorkspace(index);
+  save();
+}
+
+function addWorkspace(name, blocks, extraValues, look) {
+  save();
+  var fresh = {name: name, blocks: blocks, values: extraValues || {}, forced: {}};
+  if (look) fresh.settings = look;
+  workspaces.push(fresh);
+  openWorkspace(workspaces.length - 1);
+  save();
+}
+
+function closeWorkspace(index) {
+  save();
+  workspaces.splice(index, 1);
+  if (workspaces.length === 0) workspaces.push({name: "untitled", blocks: [{kind: "math", latex: ""}], values: {}, forced: {}});
+  var next = index < active ? active - 1 : active;
+  openWorkspace(Math.min(next, workspaces.length - 1));
+  save();
+}
+
+function tabs() {
+  var holder = document.getElementById("tabs");
+  holder.innerHTML = "";
+  for (var i = 0; i < workspaces.length; i++) {
+    var tab = document.createElement("div");
+    tab.className = "tab" + (i === active ? " active" : "");
+    var title = document.createElement("span");
+    title.textContent = workspaces[i].name;
+    var close = document.createElement("span");
+    close.className = "close";
+    close.innerHTML = "&times;";
+    close.title = "close workspace";
+    tab.appendChild(title);
+    tab.appendChild(close);
+    (function (i, tab, title, close) {
+      tab.onclick = function (e) { if (e.target !== close && i !== active) switchTo(i); };
+      close.onclick = function (e) {
+        e.stopPropagation();
+        if (confirm("Close \"" + workspaces[i].name + "\"? Its contents will be deleted.")) closeWorkspace(i);
+      };
+      title.ondblclick = function () {
+        var input = document.createElement("input");
+        input.value = workspaces[i].name;
+        tab.replaceChild(input, title);
+        input.focus();
+        input.select();
+        var done = function () {
+          workspaces[i].name = input.value.trim() || workspaces[i].name;
+          save();
+          tabs();
+        };
+        input.onblur = done;
+        input.onkeydown = function (e) { if (e.key === "Enter") input.blur(); if (e.key === "Escape") { input.value = workspaces[i].name; input.blur(); } };
+      };
+    })(i, tab, title, close);
+    holder.appendChild(tab);
+  }
+  var add = document.createElement("button");
+  add.id = "newTab";
+  add.textContent = "+";
+  add.title = "new workspace";
+  add.onclick = function () { addWorkspace("untitled " + (workspaces.length + 1), [{kind: "math", latex: ""}]); };
+  holder.appendChild(add);
+}
+
+function showSettings() {
+  document.getElementById("showGrid").checked = settings.grid;
+  document.getElementById("showAxes").checked = settings.axes;
+  document.getElementById("showValues").checked = settings.values !== false;
+  document.body.classList.toggle("noValues", settings.values === false);
+  document.getElementById("background").value = settings.background;
+}
+
+function meshCode(text) {
+  var vertices = [], faces = [];
+  var lines = text.split("\n");
+  for (var i = 0; i < lines.length; i++) {
+    var words = lines[i].trim().split(/\s+/);
+    if (words[0] === "v") vertices.push([parseFloat(words[1]), parseFloat(words[2]), parseFloat(words[3])]);
+    if (words[0] === "f") {
+      var corner = [];
+      for (var k = 1; k < words.length; k++) corner.push(parseInt(words[k].split("/")[0]) - 1);
+      for (var k = 1; k + 1 < corner.length; k++) faces.push([corner[0], corner[k], corner[k + 1]]);
+    }
+  }
+  if (vertices.length === 0 || faces.length === 0) throw new Error("no vertices or faces found");
+  var low = [Infinity, Infinity, Infinity], high = [-Infinity, -Infinity, -Infinity];
+  for (var i = 0; i < vertices.length; i++) {
+    for (var axis = 0; axis < 3; axis++) {
+      low[axis] = Math.min(low[axis], vertices[i][axis]);
+      high[axis] = Math.max(high[axis], vertices[i][axis]);
+    }
+  }
+  var half = Math.max(high[0] - low[0], high[1] - low[1], high[2] - low[2]) / 2;
+  var fitScale = half > 0 ? 1.4 / half : 1;
+  for (var i = 0; i < vertices.length; i++) {
+    for (var axis = 0; axis < 3; axis++) {
+      vertices[i][axis] = (vertices[i][axis] - (low[axis] + high[axis]) / 2) * fitScale;
+    }
+  }
+  var number = function (x) {
+    var t = (Math.round(x * 1e6) / 1e6).toString();
+    return t.indexOf(".") < 0 && t.indexOf("e") < 0 ? t + ".0" : t;
+  };
+  var nodes = [];
+  var order = faces.map(function (f, index) {
+    var c = [0, 1, 2].map(function (axis) {
+      return (vertices[f[0]][axis] + vertices[f[1]][axis] + vertices[f[2]][axis]) / 3;
+    });
+    return {face: f, center: c};
+  });
+  var build = function (start, end) {
+    var index = nodes.length;
+    var box = [Infinity, Infinity, Infinity, -Infinity, -Infinity, -Infinity];
+    var middle = [Infinity, Infinity, Infinity, -Infinity, -Infinity, -Infinity];
+    for (var i = start; i < end; i++) {
+      for (var corner = 0; corner < 3; corner++) {
+        var point = vertices[order[i].face[corner]];
+        for (var axis = 0; axis < 3; axis++) {
+          box[axis] = Math.min(box[axis], point[axis]);
+          box[axis + 3] = Math.max(box[axis + 3], point[axis]);
+        }
+      }
+      for (var axis = 0; axis < 3; axis++) {
+        middle[axis] = Math.min(middle[axis], order[i].center[axis]);
+        middle[axis + 3] = Math.max(middle[axis + 3], order[i].center[axis]);
+      }
+    }
+    var node = box.concat([start, end - start]);
+    nodes.push(node);
+    if (end - start <= 4) return index;
+    var spread = [0, 1, 2].map(function (axis) { return middle[axis + 3] - middle[axis]; });
+    var axis = spread.indexOf(Math.max.apply(null, spread));
+    var part = order.slice(start, end).sort(function (p, q) { return p.center[axis] - q.center[axis]; });
+    for (var i = start; i < end; i++) order[i] = part[i - start];
+    var half = Math.floor((start + end) / 2);
+    node[7] = 0;
+    var left = build(start, half);
+    var right = build(half, end);
+    node[6] = left;
+    node.push(right);
+    return index;
+  };
+  build(0, order.length);
+  faces = order.map(function (o) { return o.face; });
+  for (var n = 0; n < nodes.length; n++) if (nodes[n].length === 8) nodes[n].push(0);
+  return "var vertexCount interger = " + vertices.length + ";\n"
+      + "var faceCount interger = " + faces.length + ";\n"
+      + "var nodeCount interger = " + nodes.length + ";\n"
+      + "collection V matrix[[]] = [[" + vertices.map(function (v) { return v.map(number).join(", "); }).join("]\\[") + "]];\n"
+      + "collection F matrix[[]] = [[" + faces.map(function (f) { return f.join(", "); }).join("]\\[") + "]];\n"
+      + "collection B matrix[[]] = [[" + nodes.map(function (b) { return b.map(number).join(", "); }).join("]\\[") + "]];";
+}
+
+function loadSuzanne(room) {
+  fetch("assets/suzanne.obj").then(function (r) { return r.text(); }).then(function (text) {
+    var blocks = JSON.parse(JSON.stringify(suzanneHead));
+    if (room) {
+      blocks[0].latex = "a=0.35";
+      blocks[1].latex = "b=-0.2";
+      blocks.splice(2, 0, {kind: "math", latex: "n=10800"});
+    }
+    blocks.push({kind: "code", text: meshCode(text)});
+    blocks.push({kind: "code", text: room ? roomTracer : suzanneTracer});
+    addWorkspace(room ? "suzanne room" : "suzanne", blocks, {});
+  });
+}
+
+function load(name) {
+  if (name === "suzanne" || name === "room") {
+    loadSuzanne(name === "room");
+    return;
+  }
+  var look = name === "hilbert" ? {grid: false, axes: false, values: false, background: "#0d1b3d"} : null;
+  addWorkspace(name, examples[name], name === "spirograph" ? JSON.parse(JSON.stringify(defaults)) : {}, look);
+}
+
+function makeBlock(kind, after) {
+  var block = document.createElement("div");
+  block.className = "block " + (kind === "code" ? "codeBlock" : "mathBlock");
+  var tools = document.createElement("div");
+  tools.className = "tools";
+  tools.innerHTML = "<button>+ code</button><button>+ math</button><button>&uarr;</button><button>&darr;</button><button>&times;</button>";
+  block.appendChild(tools);
+  var holder = document.getElementById("rows");
+  if (after) holder.insertBefore(block, after.element.nextSibling);
+  else holder.appendChild(block);
+
+  var entry = {kind: kind, element: block};
+  var index = after ? rows.indexOf(after) + 1 : rows.length;
+  rows.splice(index, 0, entry);
+
+  tools.children[0].onclick = function () { addCode("", entry).area.focus(); };
+  tools.children[1].onclick = function () { addRow("", entry).field.focus(); };
+  tools.children[2].onclick = function () { move(entry, -1); };
+  tools.children[3].onclick = function () { move(entry, 1); };
+  tools.children[4].onclick = function () {
+    rows.splice(rows.indexOf(entry), 1);
+    block.remove();
+    recolor();
+    schedule();
+  };
+  return entry;
+}
+
+function move(entry, step) {
+  var at = rows.indexOf(entry);
+  var to = at + step;
+  if (to < 0 || to >= rows.length) return;
+  rows.splice(at, 1);
+  rows.splice(to, 0, entry);
+  var holder = document.getElementById("rows");
+  for (var i = 0; i < rows.length; i++) holder.appendChild(rows[i].element);
+  recolor();
+  schedule();
+}
+
+function grow(area) {
+  area.style.height = "auto";
+  area.style.height = Math.min(area.scrollHeight, 320) + "px";
+  area.style.overflowY = area.scrollHeight > 320 ? "auto" : "hidden";
+}
+
+function addCode(text, after) {
+  var entry = makeBlock("code", after);
+  var dot = document.createElement("div");
+  dot.className = "dot";
+  var area = document.createElement("textarea");
+  area.spellcheck = false;
+  area.value = text;
+  entry.element.appendChild(dot);
+  entry.element.appendChild(area);
+  entry.dot = dot;
+  hookDot(entry);
+  entry.area = area;
+  area.oninput = function () { grow(area); schedule(); };
+  area.onkeydown = function (e) {
+    if (e.key === "Tab") {
+      e.preventDefault();
+      var start = area.selectionStart;
+      area.value = area.value.substring(0, start) + "    " + area.value.substring(area.selectionEnd);
+      area.selectionStart = area.selectionEnd = start + 4;
+      schedule();
+    }
+  };
+  setTimeout(function () { grow(area); }, 0);
+  recolor();
+  return entry;
+}
+
+function addRow(start, after) {
+  var latex = typeof start === "string" ? start : start.latex;
+  var entry = makeBlock("math", after);
+  var row = document.createElement("div");
+  row.className = "row";
+  var dot = document.createElement("div");
+  dot.className = "dot";
+  var span = document.createElement("span");
+  var shown = document.createElement("span");
+  shown.className = "val";
+  shown.title = "click to hide this value";
+  var off = document.createElement("span");
+  off.className = "valOff";
+  off.textContent = "=";
+  off.title = "show the value again";
+  shown.onclick = function () { entry.noValue = true; off.className = "valOff on"; shown.innerHTML = ""; schedule(); };
+  off.onclick = function () { entry.noValue = false; off.className = "valOff"; schedule(); };
+  entry.valOff = off;
+  row.appendChild(dot);
+  row.appendChild(span);
+  row.appendChild(off);
+  row.appendChild(shown);
+  entry.element.appendChild(row);
+  entry.dot = dot;
+  entry.val = shown;
+  hookDot(entry);
+  entry.field = MQ.MathField(span, {
+    spaceBehavesLikeTab: false,
+    autoCommands: "pi theta sqrt",
+    autoOperatorNames: "sin cos tan arctan ln exp det rgb hsv",
+    handlers: {
+      edit: function () { showRange(entry); inlineSlider(entry); schedule(); },
+      enter: function () { addCode("", entry).area.focus(); }
+    }
+  });
+  entry.field.latex(latex);
+  var range = document.createElement("div");
+  range.className = "range";
+  range.innerHTML = "<span></span> &le; t &le; <span></span>";
+  entry.element.appendChild(range);
+  entry.tMin = MQ.MathField(range.children[0], {handlers: {edit: schedule}});
+  entry.tMax = MQ.MathField(range.children[1], {handlers: {edit: schedule}});
+  entry.tMin.latex(start.tMin || "0");
+  entry.tMax.latex(start.tMax || "2\\pi");
+  entry.range = range;
+  showRange(entry);
+  inlineSlider(entry);
+  recolor();
+  return entry;
+}
+
+var sliderRow = /^([A-Za-z](?:_\{[^}]*\}|_[A-Za-z0-9])?)=(-?\d*\.?\d+)$/;
+
+function inlineSlider(entry) {
+  var match = sliderRow.exec(entry.field.latex());
+  if (!match) {
+    if (entry.slider) { entry.slider.remove(); entry.slider = null; }
+    return;
+  }
+  var value = parseFloat(match[2]);
+  if (!entry.slider) {
+    entry.slider = document.createElement("div");
+    entry.slider.className = "inlineSlider";
+    entry.slider.innerHTML = "<button class=play title='play'>&#9654;</button><input type=number class=lo><input type=range step=any><input type=number class=hi>";
+    entry.element.appendChild(entry.slider);
+    var playButton = entry.slider.children[0];
+    var lo = entry.slider.children[1], range = entry.slider.children[2], hi = entry.slider.children[3];
+    playButton.onclick = function () {
+      toggleAnimation({button: playButton, range: range, set: function (v) {
+        var name = sliderRow.exec(entry.field.latex())[1];
+        range.value = v;
+        entry.field.latex(name + "=" + Math.round(v * 1000) / 1000);
+      }});
+    };
+    lo.value = value > 10 ? 0 : Math.min(-10, Math.floor(value));
+    hi.value = Math.max(10, Math.ceil(value));
+    range.min = lo.value;
+    range.max = hi.value;
+    range.oninput = function () {
+      var name = sliderRow.exec(entry.field.latex())[1];
+      var rounded = Math.round(parseFloat(range.value) * 100) / 100;
+      entry.field.latex(name + "=" + rounded);
+    };
+    lo.onchange = function () { range.min = lo.value; };
+    hi.onchange = function () { range.max = hi.value; };
+  }
+  var input = entry.slider.children[2];
+  if (document.activeElement !== input) input.value = value;
+}
+
+function showRange(entry) {
+  if (!entry.range) return;
+  var latex = entry.field.latex();
+  var definition = /^[A-Za-z](_\{[^}]*\}|_[A-Za-z0-9])?\\left\(.*?\\right\)=/.test(latex);
+  var usesT = /(^|[^a-zA-Z\\])t([^a-zA-Z_]|$)/.test(latex) || /^r=.*\\theta/.test(latex);
+  entry.range.children[0].nextSibling.textContent = /^r=/.test(latex) ? " \u2264 \u03b8 \u2264 " : " \u2264 t \u2264 ";
+  entry.range.style.display = definition || !usesT ? "none" : "flex";
+}
+
+var namedColors = {};
+var grids = {};
+var images = {};
+var animating = null;
+var animationFrames = 90;
+
+function toggleAnimation(spec) {
+  if (animating && animating.button === spec.button) {
+    stopAnimation();
+    return;
+  }
+  stopAnimation();
+  spec.step = 0;
+  spec.lo = parseFloat(spec.range.min);
+  spec.hi = parseFloat(spec.range.max);
+  spec.start = parseFloat(spec.range.value);
+  spec.step = Math.round((spec.start - spec.lo) / (spec.hi - spec.lo) * animationFrames);
+  animating = spec;
+  spec.button.className = "play playing";
+  spec.button.innerHTML = "&#10074;&#10074;";
+  document.getElementById("recordBar").className = "on";
+  document.getElementById("recordText").textContent = "playing";
+  advance();
+}
+
+function stopAnimation() {
+  if (!animating) return;
+  animating.button.className = "play";
+  animating.button.innerHTML = "&#9654;";
+  animating = null;
+  recording = null;
+  document.getElementById("recordBar").className = "";
+  document.getElementById("recordButton").disabled = false;
+}
+
+function advance() {
+  animating.step = (animating.step + 1) % (animationFrames + 1);
+  animating.set(animating.lo + (animating.hi - animating.lo) * animating.step / animationFrames);
+}
+
+var recording = null;
+
+function animationStep() {
+  if (!animating) return;
+  if (recording) {
+    var canvas = document.getElementById("screen");
+    var shrink = Math.min(1, 640 / canvas.width);
+    var copy = document.createElement("canvas");
+    copy.width = Math.round(canvas.width * shrink);
+    copy.height = Math.round(canvas.height * shrink);
+    copy.getContext("2d").drawImage(canvas, 0, 0, copy.width, copy.height);
+    recording.push(copy.toDataURL("image/png"));
+    document.getElementById("recordText").textContent = "recording " + recording.length + " / " + (animationFrames + 1);
+    if (recording.length > animationFrames) {
+      var frames = recording;
+      recording = null;
+      document.getElementById("recordText").textContent = "making the GIF";
+      fetch("/gif", {method: "POST", body: frames.join("\n")}).then(function (r) { return r.blob(); }).then(function (blob) {
+        var link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = (workspaces[active] ? workspaces[active].name : "animation") + ".gif";
+        link.click();
+        document.getElementById("recordText").textContent = "saved " + link.download;
+        document.getElementById("recordButton").disabled = false;
+      });
+    }
+  }
+  setTimeout(function () { if (animating) advance(); }, 16);
+}
+var shaders = [];
+var paletteFor = null;
+
+function hookDot(entry) {
+  entry.dot.title = "colors and visibility";
+  entry.dot.onclick = function (e) {
+    e.stopPropagation();
+    if (paletteFor === entry) { closePalette(); return; }
+    openPalette(entry);
+  };
+}
+
+function closePalette() {
+  document.getElementById("palette").style.display = "none";
+  paletteFor = null;
+}
+
+function openPalette(entry) {
+  paletteFor = entry;
+  var box = document.getElementById("palette");
+  var html = "<div class=swatches>";
+  for (var i = 0; i < colors.length; i++) {
+    var chosen = entry.color && entry.color.hex === colors[i] ? " chosen" : "";
+    html += "<div class='swatch" + chosen + "' data-hex='" + colors[i] + "' style='background:" + colors[i] + "'></div>";
+  }
+  html += "</div>";
+  var names = Object.keys(namedColors);
+  if (names.length > 0) html += "<div>from your colors</div>";
+  for (var j = 0; j < names.length; j++) {
+    var c = namedColors[names[j]];
+    html += "<div class=named data-name='" + names[j] + "'><span style='background:rgb(" + c.join(",") + ")'></span>" + names[j] + "</div>";
+  }
+  if (shaders.length > 0) html += "<div>changes along the line</div>";
+  for (var m = 0; m < shaders.length; m++) {
+    var picked = entry.color && entry.color.shader === shaders[m] ? " style='font-weight:bold'" : "";
+    html += "<div class=named data-shader='" + shaders[m] + "'" + picked + "><span style='background:linear-gradient(90deg,#e33,#3b3,#33e)'></span>" + shaders[m] + "</div>";
+  }
+  html += "<button id=paletteHide>" + (entry.hidden ? "show" : "hide") + "</button>";
+  box.innerHTML = html;
+  var spot = entry.dot.getBoundingClientRect();
+  box.style.left = (spot.right + 8) + "px";
+  box.style.top = Math.min(spot.top, window.innerHeight - 260) + "px";
+  box.style.display = "block";
+
+  var swatches = box.querySelectorAll(".swatch");
+  for (var k = 0; k < swatches.length; k++) {
+    swatches[k].onclick = function () { setColor(entry, {hex: this.getAttribute("data-hex")}); };
+  }
+  var named = box.querySelectorAll(".named");
+  for (var n = 0; n < named.length; n++) {
+    named[n].onclick = function () {
+      if (this.getAttribute("data-shader")) setColor(entry, {shader: this.getAttribute("data-shader")});
+      else setColor(entry, {name: this.getAttribute("data-name")});
+    };
+  }
+  document.getElementById("paletteHide").onclick = function () {
+    entry.hidden = !entry.hidden;
+    entry.dot.className = entry.hidden ? "dot off" : "dot";
+    saveSoon();
+    closePalette();
+    draw();
+  };
+}
+
+function setColor(entry, color) {
+  saveSoon();
+  var wasShader = entry.color && entry.color.shader;
+  entry.color = color;
+  closePalette();
+  recolor();
+  draw();
+  if (wasShader || color.shader) schedule();
+}
+
+function colorOf(index) {
+  var entry = rows[index];
+  if (entry && entry.field) {
+    var own = /^([A-Za-z])(?:_\{([^}]*)\}|_([A-Za-z0-9]))?=\\operatorname/.exec(entry.field.latex());
+    if (own) {
+      var key = own[2] || own[3] ? own[1] + "_" + (own[2] || own[3]) : own[1];
+      var mine = namedColors[key];
+      if (mine) return "#" + mine.map(function (v) { return ("0" + v.toString(16)).slice(-2); }).join("");
+    }
+  }
+  if (entry && entry.color) {
+    if (entry.color.hex) return entry.color.hex;
+    var c = namedColors[entry.color.name];
+    if (c) return "#" + c.map(function (v) { return ("0" + v.toString(16)).slice(-2); }).join("");
+  }
+  return colors[index % colors.length];
+}
+
+function tidy(text) {
+  return text.replace(/-?\d+\.\d+(E-?\d+)?/g, function (number) {
+    var value = parseFloat(number);
+    if (Math.abs(value) < 1e-9) return "0";
+    var rounded = parseFloat(value.toPrecision(10));
+    return String(rounded);
+  });
+}
+
+function latexName(name) {
+  var cut = name.indexOf("_");
+  if (cut < 0) return name.length === 1 ? name : null;
+  if (cut !== 1) return null;
+  return name.charAt(0) + "_{" + name.substring(2) + "}";
+}
+
+function makeSlider(name) {
+  var latex = latexName(name);
+  if (latex) {
+    var first = rows[0];
+    var entry = addRow(latex + "=1", null);
+    rows.splice(rows.indexOf(entry), 1);
+    rows.unshift(entry);
+    var holder = document.getElementById("rows");
+    holder.insertBefore(entry.element, holder.firstChild);
+    recolor();
+  } else {
+    forcedSliders[name] = 1;
+    values[name] = 1;
+  }
+  schedule();
+}
+
+var forcedSliders = {};
+
+function recolor() {
+  for (var i = 0; i < rows.length; i++) {
+    if (!rows[i].dot) continue;
+    if (rows[i].color && rows[i].color.shader) rows[i].dot.style.background = "linear-gradient(135deg,#e33,#3b3,#33e)";
+    else rows[i].dot.style.background = colorOf(i);
+  }
+}
+
+function target() {
+  return document.querySelector("input[name=target]:checked").value;
+}
+
+function schedule() {
+  saveSoon();
+  clearTimeout(timer);
+  timer = setTimeout(run, animating ? 0 : target() === "riscv" ? 700 : 250);
+}
+
+var controller = null;
+var liveFrame = 0;
+
+function live(chunkLines) {
+  for (var n = 0; n < chunkLines.length; n++) {
+    var parts = chunkLines[n].split(" ");
+    if (parts[0] === "img" && parts.length === 8) {
+      var wide = parseInt(parts[2]), tall = parseInt(parts[3]);
+      var previous = images[parts[1]];
+      var fresh = {wide: wide, tall: tall, left: parseFloat(parts[4]), right: parseFloat(parts[5]),
+        bottom: parseFloat(parts[6]), top: parseFloat(parts[7]), data: new Uint8ClampedArray(wide * tall * 4)};
+      if (previous && previous.wide === wide && previous.tall === tall) {
+        for (var k = 0; k < fresh.data.length; k += 4) {
+          fresh.data[k] = previous.data[k] * 0.35 + 255 * 0.65;
+          fresh.data[k + 1] = previous.data[k + 1] * 0.35 + 255 * 0.65;
+          fresh.data[k + 2] = previous.data[k + 2] * 0.35 + 255 * 0.65;
+          fresh.data[k + 3] = previous.data[k + 3];
+        }
+      }
+      images[parts[1]] = fresh;
+    } else if (parts[0] === "px" && parts.length === 7) {
+      var picture = images[parts[1]];
+      if (!picture) continue;
+      var pi = parseInt(parts[2]), pj = parseInt(parts[3]);
+      if (pi < 0 || pj < 0 || pi >= picture.wide || pj >= picture.tall) continue;
+      var spot = (pj * picture.wide + pi) * 4;
+      picture.data[spot] = clampColor(parts[4]);
+      picture.data[spot + 1] = clampColor(parts[5]);
+      picture.data[spot + 2] = clampColor(parts[6]);
+      picture.data[spot + 3] = 255;
+    }
+  }
+  if (!liveFrame) {
+    liveFrame = requestAnimationFrame(function () {
+      liveFrame = 0;
+      draw();
+    });
+  }
+}
+
+var prefix = null;
+
+function prefixLine(name) {
+  return new RegExp("^" + name + "=(-?[0-9.]+)\t", "m");
+}
+
+function prefixValue(body, name) {
+  var match = prefixLine(name).exec(body);
+  return match ? parseFloat(match[1]) : null;
+}
+
+function prefixBase(body, name) {
+  return body.replace(prefixLine(name), name + "=?\t");
+}
+
+function remember(body, text) {
+  prefix = null;
+  var match = /\n@@output\n(?:[^\n]*\n)*?prefix ([A-Za-z]\w*)\n/.exec(text);
+  if (!match || text.indexOf("@@error ") === 0) return;
+  var value = prefixValue(body, match[1]);
+  if (value === null) return;
+  prefix = {name: match[1], value: value, base: prefixBase(body, match[1]), text: text};
+}
+
+function prefixText(memory, wanted) {
+  var start = memory.text.indexOf("\n@@output\n") + 10;
+  var end = memory.text.indexOf("\n@@asm\n");
+  if (end < 0) end = memory.text.length;
+  var lines = memory.text.substring(start, end).split("\n");
+  var kept = [];
+  var left = Math.max(0, Math.floor(wanted));
+  for (var k = 0; k < lines.length; k++) {
+    if (lines[k].indexOf("px ") === 0) {
+      if (left <= 0) continue;
+      left--;
+    }
+    kept.push(lines[k]);
+  }
+  return memory.text.substring(0, start) + kept.join("\n") + memory.text.substring(end);
+}
+
+function run() {
+  if (running && controller) controller.abort();
+  running = true;
+  document.getElementById("status").textContent = target() === "riscv" ? "compiling to RISC-V" : "running";
+  document.getElementById("status").className = "busy";
+  var canvas = document.getElementById("screen");
+  var halfWidth = canvas.clientWidth / 2 / view.scale;
+  var body = target() + "\n@@values\n";
+  for (var name in values) body += (forcedSliders[name] !== undefined ? "!" : "") + name + "=" + values[name] + "\n";
+  var halfHeight = canvas.clientHeight / 2 / view.scale;
+  body += "view_xmin=" + (view.cx - halfWidth) + "\nview_xmax=" + (view.cx + halfWidth) + "\n";
+  body += "view_ymin=" + (view.cy - halfHeight) + "\nview_ymax=" + (view.cy + halfHeight) + "\n";
+  for (var i = 0; i < rows.length; i++) {
+    var shade = rows[i].color && rows[i].color.shader ? " shade=" + rows[i].color.shader : "";
+    if (rows[i].noValue) shade += " novalue";
+    if (rows[i].kind === "code") {
+      body += "@@block code" + shade + "\n" + rows[i].area.value.replace(/^@@/gm, " @@") + "\n";
+    } else {
+      body += "@@block math" + shade + "\n" + rows[i].field.latex() + "\t" + rows[i].tMin.latex() + "\t" + rows[i].tMax.latex() + "\n";
+    }
+  }
+
+  var fitThis = wantFit;
+  wantFit = false;
+  if (prefix) {
+    var wanted = prefixValue(body, prefix.name);
+    if (wanted !== null && prefixBase(body, prefix.name) === prefix.base && wanted <= prefix.value) {
+      if (controller) controller.abort();
+      controller = null;
+      running = false;
+      document.getElementById("status").textContent = "";
+      document.getElementById("status").className = "";
+      read(prefixText(prefix, wanted), fitThis);
+      return;
+    }
+  }
+  var mine = new AbortController();
+  controller = mine;
+  var finished = function (text) {
+    if (controller !== mine) return;
+    controller = null;
+    running = false;
+    document.getElementById("status").textContent = "";
+    document.getElementById("status").className = "";
+    remember(body, text);
+    read(text, fitThis);
+  };
+  (window.mexplRun ? window.mexplRun(body, mine.signal) : fetch("/run", {method: "POST", body: body, signal: mine.signal})).then(function (response) {
+    var reader = response.body.getReader();
+    var decoder = new TextDecoder();
+    var text = "";
+    var scanned = -1;
+    var pump = function () {
+      return reader.read().then(function (chunk) {
+        if (chunk.done) {
+          text += decoder.decode();
+          finished(text);
+          return;
+        }
+        text += decoder.decode(chunk.value, {stream: true});
+        if (scanned < 0) {
+          var start = text.indexOf("\n@@output\n");
+          if (start >= 0) scanned = start + 10;
+        }
+        if (scanned >= 0) {
+          var end = text.lastIndexOf("\n");
+          var asmAt = text.indexOf("\n@@asm\n", scanned);
+          if (asmAt >= 0) end = Math.min(end, asmAt);
+          if (end > scanned) {
+            live(text.substring(scanned, end).split("\n"));
+            scanned = end + 1;
+          }
+        }
+        return pump();
+      });
+    };
+    return pump();
+  }).catch(function (e) {
+    if (e.name === "AbortError" || controller !== mine) return;
+    controller = null;
+    running = false;
+    document.getElementById("status").textContent = "server not reachable";
+    document.getElementById("status").className = "";
+  });
+}
+
+function read(text, fitThis) {
+  var error = document.getElementById("error");
+  error.textContent = "";
+  var errorAt = text.indexOf("@@error ");
+  if (errorAt === 0) { error.textContent = text.substring(8); return; }
+
+  var lines = text.split("\n");
+  var vars = lines[0].substring(7).trim();
+  sliders(vars === "" ? [] : vars.split(" "));
+  var symbols = {};
+  for (var q = 1; q < lines.length && lines[q].indexOf("@@sym ") === 0; q++) {
+    var rest = lines[q].substring(6);
+    var cut = rest.indexOf(" ");
+    symbols[rest.substring(0, cut)] = rest.substring(cut + 1);
+  }
+
+  var sourceAt = text.indexOf("@@source\n");
+  var outputAt = text.indexOf("\n@@output\n");
+  var asmAt = text.indexOf("\n@@asm\n");
+  document.getElementById("source").textContent = text.substring(sourceAt + 9, outputAt);
+  var output = text.substring(outputAt + 10, asmAt < 0 ? text.length : asmAt).split("\n");
+  if (asmAt >= 0) showAssembly(text.substring(asmAt + 7));
+
+  series = {};
+  grids = {};
+  images = {};
+  var gridAt = null;
+  namedColors = {};
+  shaders = [];
+  for (var v = 0; v < rows.length; v++) if (rows[v].val) rows[v].val.textContent = "";
+  var other = [];
+  for (var j = 0; j < output.length; j++) {
+    var parts = output[j].split(" ");
+    if (parts[0] === "img" && parts.length === 8) {
+      var wide = parseInt(parts[2]), tall = parseInt(parts[3]);
+      images[parts[1]] = {wide: wide, tall: tall, left: parseFloat(parts[4]), right: parseFloat(parts[5]),
+        bottom: parseFloat(parts[6]), top: parseFloat(parts[7]), data: new Uint8ClampedArray(wide * tall * 4)};
+    } else if (parts[0] === "px" && parts.length === 7) {
+      var picture = images[parts[1]];
+      if (picture) {
+        var pi = parseInt(parts[2]), pj = parseInt(parts[3]);
+        if (pi >= 0 && pj >= 0 && pi < picture.wide && pj < picture.tall) {
+          var spot = (pj * picture.wide + pi) * 4;
+          picture.data[spot] = clampColor(parts[4]);
+          picture.data[spot + 1] = clampColor(parts[5]);
+          picture.data[spot + 2] = clampColor(parts[6]);
+          picture.data[spot + 3] = 255;
+        }
+      }
+    } else if (parts[0] === "grid" && parts.length === 9) {
+      gridAt = {mode: parts[2], cols: parseInt(parts[3]), rows: parseInt(parts[4]),
+        xmin: parseFloat(parts[5]), xmax: parseFloat(parts[6]), ymin: parseFloat(parts[7]), ymax: parseFloat(parts[8]), vals: []};
+      grids[parts[1]] = gridAt;
+    } else if (parts[0] === "gv" && gridAt) {
+      var numbers = [];
+      for (var g = 1; g < parts.length; g++) numbers.push(parseFloat(parts[g]));
+      gridAt.vals.push(numbers);
+    } else if (parts[0] === "val" && parts.length >= 3) {
+      var row = rows[parseInt(parts[1])];
+      if (row && row.val) row.val.textContent = "= " + tidy(parts.slice(2).join(" "));
+    } else if (parts[0] === "shader" && parts.length === 2) {
+      shaders.push(parts[1]);
+    } else if (parts[0] === "color" && parts.length === 5) {
+      namedColors[parts[1]] = [clampColor(parts[2]), clampColor(parts[3]), clampColor(parts[4])];
+    } else if (parts[0] === "pt" && (parts.length === 4 || parts.length === 7)) {
+      var id = parts[1];
+      if (!series[id]) series[id] = [[]];
+      var strokes = series[id];
+      var point = [parseFloat(parts[2]), parseFloat(parts[3])];
+      if (parts.length === 7) point.push(clampColor(parts[4]), clampColor(parts[5]), clampColor(parts[6]));
+      strokes[strokes.length - 1].push(point);
+    } else if (parts[0] === "prefix" && parts.length === 2) {
+      continue;
+    } else if (parts[0] === "gap" && parts.length === 2) {
+      var gapId = parts[1];
+      if (!series[gapId]) series[gapId] = [[]];
+      if (series[gapId][series[gapId].length - 1].length > 0) series[gapId].push([]);
+    } else if (output[j].trim() !== "") {
+      other.push(output[j]);
+    }
+  }
+  for (var id in symbols) {
+    var target = rows[parseInt(id)];
+    if (!target || !target.val || target.noValue) continue;
+    target.val.innerHTML = "= <span></span>";
+    MQ.StaticMath(target.val.children[0]).latex(symbols[id]);
+  }
+  for (var w = 0; w < rows.length; w++) {
+    if (rows[w].valOff) rows[w].valOff.className = rows[w].noValue ? "valOff on" : "valOff";
+  }
+  document.getElementById("console").textContent = other.join("\n");
+  var bar = document.getElementById("undefinedBar");
+  bar.innerHTML = "";
+  var missing = /'([A-Za-z_][A-Za-z0-9_]*)'? is undefined/.exec(other.join("\n"));
+  if (missing && !forcedSliders[missing[1]]) {
+    bar.appendChild(document.createTextNode(missing[1] + " isn't defined "));
+    var button = document.createElement("button");
+    button.className = "makeSlider";
+    button.textContent = "make a slider for " + missing[1];
+    button.onclick = function () { makeSlider(missing[1]); };
+    bar.appendChild(button);
+  }
+  recolor();
+  if (fitThis) { fit(); schedule(); }
+  draw();
+  animationStep();
+}
+
+function clampColor(text) {
+  var value = Math.round(parseFloat(text));
+  if (!(value >= 0)) return 0;
+  return value > 255 ? 255 : value;
+}
+
+function sliders(names) {
+  var holder = document.getElementById("sliders");
+  var keep = {};
+  for (var i = 0; i < names.length; i++) {
+    var name = names[i];
+    keep[name] = true;
+    if (document.getElementById("s_" + name)) continue;
+    if (values[name] === undefined) values[name] = defaults[name] !== undefined ? defaults[name] : 1;
+    var line = document.createElement("div");
+    line.className = "slider";
+    line.id = "s_" + name;
+    line.innerHTML = "<button class=play title='play'>&#9654;</button><span>" + name + "</span><input type=range min=-10 max=10 step=0.01><input type=number step=0.01>";
+    var playButton = line.children[0];
+    var range = line.children[2];
+    var box = line.children[3];
+    if (values[name] < -10) range.min = values[name];
+    if (values[name] > 10) range.max = values[name];
+    range.value = values[name];
+    box.value = values[name];
+    (function (name, range, box, playButton) {
+      playButton.onclick = function () {
+        toggleAnimation({button: playButton, range: range, set: function (v) {
+          values[name] = v;
+          range.value = v;
+          box.value = Math.round(v * 1000) / 1000;
+          schedule();
+        }});
+      };
+      range.oninput = function () { values[name] = parseFloat(range.value); box.value = range.value; schedule(); };
+      box.onchange = function () {
+        values[name] = parseFloat(box.value);
+        if (values[name] < range.min) range.min = values[name];
+        if (values[name] > range.max) range.max = values[name];
+        range.value = box.value;
+        schedule();
+      };
+    })(name, range, box, playButton);
+    holder.appendChild(line);
+  }
+  var existing = holder.children;
+  for (var k = existing.length - 1; k >= 0; k--) {
+    if (!keep[existing[k].id.substring(2)]) existing[k].remove();
+  }
+}
+
+var wantFit = true;
+
+function fit() {
+  var xs = [], ys = [];
+  for (var id in series) {
+    for (var s = 0; s < series[id].length; s++) {
+      for (var k = 0; k < series[id][s].length; k++) {
+        xs.push(series[id][s][k][0]);
+        ys.push(series[id][s][k][1]);
+      }
+    }
+  }
+  if (xs.length < 2) return;
+  xs.sort(function (a, b) { return a - b; });
+  ys.sort(function (a, b) { return a - b; });
+  var low = Math.floor(xs.length * 0.01), high = Math.ceil(xs.length * 0.99) - 1;
+  var canvas = document.getElementById("screen");
+  var wide = xs[high] - xs[low], tall = ys[high] - ys[low];
+  if (wide <= 0 || tall <= 0) return;
+  view.cx = (xs[low] + xs[high]) / 2;
+  view.cy = (ys[low] + ys[high]) / 2;
+  view.scale = Math.min(canvas.clientWidth / wide, canvas.clientHeight / tall) * 0.85;
+}
+
+var assemblyText = "";
+
+function showAssembly(text) {
+  assemblyText = text;
+  var lines = text.split("\n");
+  var instructions = 0;
+  for (var i = 0; i < lines.length; i++) {
+    if (/^    [a-z]/.test(lines[i]) && lines[i].trim().charAt(0) !== ".") instructions++;
+  }
+  document.getElementById("asmCount").textContent = "RISC-V  " + instructions + " instructions";
+  paintAssembly();
+}
+
+function paintAssembly() {
+  var find = document.getElementById("asmFind").value;
+  var lines = assemblyText.split("\n");
+  var html = [];
+  var first = -1;
+  for (var i = 0; i < lines.length; i++) {
+    var text = lines[i].replace(/&/g, "&amp;").replace(/</g, "&lt;");
+    var match = /^(    )([a-z][a-z0-9.]*)(.*)$/.exec(text);
+    if (/^[A-Za-z_][A-Za-z0-9_]*:/.test(text)) text = "<span class=label>" + text + "</span>";
+    else if (match) text = match[1] + "<span class=op>" + match[2] + "</span>" + match[3];
+    if (find !== "" && lines[i].indexOf(find) >= 0) {
+      text = "<span class=hit>" + text + "</span>";
+      if (first < 0) first = i;
+    }
+    html.push(text);
+  }
+  var pane = document.getElementById("asm");
+  pane.innerHTML = html.join("\n");
+  var hit = pane.querySelector(".hit");
+  if (hit) pane.scrollTop = hit.offsetTop - pane.offsetTop - 40;
+}
+
+var pixels = null;
+var dpr = 1;
+var cover = null;
+var touched = [];
+var strokeColor = null;
+
+function hexToRgb(hex) {
+  return [parseInt(hex.substring(1, 3), 16), parseInt(hex.substring(3, 5), 16), parseInt(hex.substring(5, 7), 16)];
+}
+
+function mix(a, b, amount) {
+  return [a[0] + (b[0] - a[0]) * amount, a[1] + (b[1] - a[1]) * amount, a[2] + (b[2] - a[2]) * amount];
+}
+
+function stamp(x0, y0, x1, y1, r, g, b, width) {
+  var w = pixels.width, h = pixels.height;
+  var half = width / 2 + 0.5;
+  var minX = Math.max(0, Math.floor(Math.min(x0, x1) - half)), maxX = Math.min(w - 1, Math.ceil(Math.max(x0, x1) + half));
+  var minY = Math.max(0, Math.floor(Math.min(y0, y1) - half)), maxY = Math.min(h - 1, Math.ceil(Math.max(y0, y1) + half));
+  if (minX > maxX || minY > maxY) return;
+  var dx = x1 - x0, dy = y1 - y0;
+  var length2 = dx * dx + dy * dy;
+  for (var py = minY; py <= maxY; py++) {
+    for (var px = minX; px <= maxX; px++) {
+      var cx = px + 0.5 - x0, cy = py + 0.5 - y0;
+      var along = length2 > 0 ? (cx * dx + cy * dy) / length2 : 0;
+      if (along < 0) along = 0;
+      if (along > 1) along = 1;
+      var ex = cx - along * dx, ey = cy - along * dy;
+      var coverage = half - Math.sqrt(ex * ex + ey * ey);
+      if (coverage <= 0) continue;
+      if (coverage > 1) coverage = 1;
+      var at = py * w + px;
+      if (cover[at] === 0) touched.push(at);
+      if (coverage > cover[at]) {
+        cover[at] = coverage;
+        strokeColor[at * 3] = r;
+        strokeColor[at * 3 + 1] = g;
+        strokeColor[at * 3 + 2] = b;
+      }
+    }
+  }
+}
+
+function flush(opacity) {
+  var data = pixels.data;
+  for (var i = 0; i < touched.length; i++) {
+    var at = touched[i];
+    var alpha = cover[at] * opacity;
+    var p = at * 4;
+    data[p] += (strokeColor[at * 3] - data[p]) * alpha;
+    data[p + 1] += (strokeColor[at * 3 + 1] - data[p + 1]) * alpha;
+    data[p + 2] += (strokeColor[at * 3 + 2] - data[p + 2]) * alpha;
+    cover[at] = 0;
+  }
+  touched = [];
+}
+
+function toScreen(x, y) {
+  return [pixels.width / 2 + (x - view.cx) * view.scale * dpr, pixels.height / 2 - (y - view.cy) * view.scale * dpr];
+}
+
+function draw() {
+  var canvas = document.getElementById("screen");
+  var context = canvas.getContext("2d");
+  if (canvas.width === 0 || canvas.height === 0) return;
+  pixels = context.createImageData(canvas.width, canvas.height);
+  if (!cover || cover.length !== canvas.width * canvas.height) {
+    cover = new Float32Array(canvas.width * canvas.height);
+    strokeColor = new Uint8ClampedArray(canvas.width * canvas.height * 3);
+  }
+  var background = hexToRgb(settings.background);
+  var light = background[0] * 0.299 + background[1] * 0.587 + background[2] * 0.114 > 128;
+  var contrast = light ? [0, 0, 0] : [255, 255, 255];
+  var gridColor = mix(background, contrast, 0.09);
+  var axisColor = mix(background, contrast, 0.45);
+  for (var i = 0; i < pixels.data.length; i += 4) {
+    pixels.data[i] = background[0];
+    pixels.data[i + 1] = background[1];
+    pixels.data[i + 2] = background[2];
+    pixels.data[i + 3] = 255;
+  }
+
+  var step = 1;
+  while (step * view.scale < 50) step *= 2;
+  while (step * view.scale > 200) step /= 2;
+  var cssWidth = canvas.width / dpr, cssHeight = canvas.height / dpr;
+  var left = view.cx - cssWidth / 2 / view.scale;
+  var right = view.cx + cssWidth / 2 / view.scale;
+  var bottom = view.cy - cssHeight / 2 / view.scale;
+  var top = view.cy + cssHeight / 2 / view.scale;
+  var origin = toScreen(0, 0);
+
+  if (settings.grid) {
+    for (var gx = Math.floor(left / step) * step; gx <= right; gx += step) {
+      var a = toScreen(gx, 0);
+      stamp(a[0], 0, a[0], canvas.height, gridColor[0], gridColor[1], gridColor[2], dpr);
+    }
+    for (var gy = Math.floor(bottom / step) * step; gy <= top; gy += step) {
+      var c = toScreen(0, gy);
+      stamp(0, c[1], canvas.width, c[1], gridColor[0], gridColor[1], gridColor[2], dpr);
+    }
+    flush(1);
+  }
+  if (settings.axes) {
+    stamp(origin[0], 0, origin[0], canvas.height, axisColor[0], axisColor[1], axisColor[2], 1.2 * dpr);
+    stamp(0, origin[1], canvas.width, origin[1], axisColor[0], axisColor[1], axisColor[2], 1.2 * dpr);
+    flush(1);
+  }
+
+  var lineWidth = 1.4 * dpr;
+  for (var iid in images) {
+    if (rows[iid] && rows[iid].hidden) continue;
+    drawImage(images[iid]);
+  }
+  for (var gid in grids) {
+    if (rows[gid] && rows[gid].hidden) continue;
+    drawGrid(grids[gid], hexToRgb(colorOf(parseInt(gid))), lineWidth);
+  }
+  for (var id in series) {
+    if (rows[id] && rows[id].hidden) continue;
+    var base = hexToRgb(colorOf(parseInt(id)));
+    var strokes = series[id];
+    for (var s = 0; s < strokes.length; s++) {
+      var stroke = strokes[s];
+      if (stroke.length === 1) {
+        var p = toScreen(stroke[0][0], stroke[0][1]);
+        var single = stroke[0].length === 5 ? stroke[0].slice(2) : base;
+        stamp(p[0], p[1], p[0], p[1], single[0], single[1], single[2], 5 * dpr);
+      }
+      for (var k = 1; k < stroke.length; k++) {
+        var from = toScreen(stroke[k - 1][0], stroke[k - 1][1]);
+        var to = toScreen(stroke[k][0], stroke[k][1]);
+        if (Math.abs(to[0] - from[0]) + Math.abs(to[1] - from[1]) > canvas.width / 3) continue;
+        var paint = stroke[k].length === 5 ? stroke[k].slice(2) : base;
+        stamp(from[0], from[1], to[0], to[1], paint[0], paint[1], paint[2], lineWidth);
+      }
+      flush(0.9);
+    }
+  }
+  context.putImageData(pixels, 0, 0);
+
+  if (!settings.axes) return;
+  context.fillStyle = "rgb(" + axisColor.map(Math.round).join(",") + ")";
+  context.font = (11 * dpr) + "px -apple-system, system-ui, sans-serif";
+  var digits = Math.max(0, -Math.floor(Math.log10(step)));
+  var labelY = Math.min(Math.max(origin[1] + 14 * dpr, 12 * dpr), canvas.height - 4 * dpr);
+  for (var lx = Math.floor(left / step) * step; lx <= right; lx += step) {
+    if (Math.abs(lx) < step / 2) continue;
+    var sx = toScreen(lx, 0)[0];
+    var text = lx.toFixed(digits);
+    context.fillText(text, sx - context.measureText(text).width / 2, labelY);
+  }
+  var labelX = Math.min(Math.max(origin[0] + 5 * dpr, 2 * dpr), canvas.width - 40 * dpr);
+  for (var ly = Math.floor(bottom / step) * step; ly <= top; ly += step) {
+    if (Math.abs(ly) < step / 2) continue;
+    var sy = toScreen(0, ly)[1];
+    context.fillText(ly.toFixed(digits), labelX, sy + 4 * dpr);
+  }
+}
+
+function drawImage(picture) {
+  var w = pixels.width, h = pixels.height, data = pixels.data;
+  var corner = toScreen(picture.left, picture.top), far = toScreen(picture.right, picture.bottom);
+  var x0 = Math.max(0, Math.floor(corner[0])), x1 = Math.min(w - 1, Math.ceil(far[0]));
+  var y0 = Math.max(0, Math.floor(corner[1])), y1 = Math.min(h - 1, Math.ceil(far[1]));
+  for (var py = y0; py <= y1; py++) {
+    var pj = Math.floor((py + 0.5 - corner[1]) / (far[1] - corner[1]) * picture.tall);
+    if (pj < 0 || pj >= picture.tall) continue;
+    for (var px = x0; px <= x1; px++) {
+      var pi = Math.floor((px + 0.5 - corner[0]) / (far[0] - corner[0]) * picture.wide);
+      if (pi < 0 || pi >= picture.wide) continue;
+      var from = (pj * picture.wide + pi) * 4;
+      if (picture.data[from + 3] === 0) continue;
+      var to = (py * w + px) * 4;
+      data[to] = picture.data[from];
+      data[to + 1] = picture.data[from + 1];
+      data[to + 2] = picture.data[from + 2];
+    }
+  }
+}
+
+function gridValue(grid, column, row) {
+  return grid.vals[row] ? grid.vals[row][column] : NaN;
+}
+
+function drawGrid(grid, paint, lineWidth) {
+  var w = pixels.width, h = pixels.height;
+  var data = pixels.data;
+  var cellWidth = (grid.xmax - grid.xmin) / grid.cols, cellHeight = (grid.ymax - grid.ymin) / grid.rows;
+  if (grid.mode !== "eq") {
+    var below = grid.mode === "lt" || grid.mode === "le";
+    for (var py = 0; py < h; py++) {
+      var worldY = view.cy - (py + 0.5 - h / 2) / (view.scale * dpr);
+      var gy = (worldY - grid.ymin) / cellHeight;
+      if (gy < 0 || gy > grid.rows) continue;
+      var r0 = Math.min(Math.floor(gy), grid.rows - 1), fy = gy - r0;
+      for (var px = 0; px < w; px++) {
+        var worldX = view.cx + (px + 0.5 - w / 2) / (view.scale * dpr);
+        var gx = (worldX - grid.xmin) / cellWidth;
+        if (gx < 0 || gx > grid.cols) continue;
+        var c0 = Math.min(Math.floor(gx), grid.cols - 1), fx = gx - c0;
+        var f = (gridValue(grid, c0, r0) * (1 - fx) + gridValue(grid, c0 + 1, r0) * fx) * (1 - fy)
+            + (gridValue(grid, c0, r0 + 1) * (1 - fx) + gridValue(grid, c0 + 1, r0 + 1) * fx) * fy;
+        if (!(below ? f < 0 : f > 0)) continue;
+        var at = (py * w + px) * 4;
+        data[at] += (paint[0] - data[at]) * 0.22;
+        data[at + 1] += (paint[1] - data[at + 1]) * 0.22;
+        data[at + 2] += (paint[2] - data[at + 2]) * 0.22;
+      }
+    }
+  }
+  var strict = grid.mode === "lt" || grid.mode === "gt";
+  for (var row = 0; row < grid.rows; row++) {
+    for (var column = 0; column < grid.cols; column++) {
+      var corners = [[column, row], [column + 1, row], [column + 1, row + 1], [column, row + 1]];
+      var crossings = [];
+      for (var e = 0; e < 4; e++) {
+        var a = corners[e], b = corners[(e + 1) % 4];
+        var fa = gridValue(grid, a[0], a[1]), fb = gridValue(grid, b[0], b[1]);
+        if (!isFinite(fa) || !isFinite(fb) || (fa < 0) === (fb < 0)) continue;
+        var share = fa / (fa - fb);
+        crossings.push([grid.xmin + (a[0] + (b[0] - a[0]) * share) * cellWidth, grid.ymin + (a[1] + (b[1] - a[1]) * share) * cellHeight]);
+      }
+      for (var k = 0; k + 1 < crossings.length; k += 2) {
+        var from = toScreen(crossings[k][0], crossings[k][1]), to = toScreen(crossings[k + 1][0], crossings[k + 1][1]);
+        if (strict && (Math.floor((column + row) / 2) % 2 === 1)) continue;
+        stamp(from[0], from[1], to[0], to[1], paint[0], paint[1], paint[2], lineWidth);
+      }
+    }
+  }
+  flush(0.9);
+}
+
+function resize() {
+  var canvas = document.getElementById("screen");
+  dpr = window.devicePixelRatio || 1;
+  canvas.width = Math.round(canvas.clientWidth * dpr);
+  canvas.height = Math.round(canvas.clientHeight * dpr);
+  draw();
+}
+
+var dragging = null;
+var screen = document.getElementById("screen");
+screen.onmousedown = function (e) { dragging = [e.clientX, e.clientY]; screen.style.cursor = "grabbing"; };
+window.onmouseup = function () {
+  if (dragging) { dragging = null; screen.style.cursor = "grab"; schedule(); }
+};
+window.onmousemove = function (e) {
+  if (!dragging) return;
+  view.cx -= (e.clientX - dragging[0]) / view.scale;
+  view.cy += (e.clientY - dragging[1]) / view.scale;
+  dragging = [e.clientX, e.clientY];
+  draw();
+};
+function zoomAt(factor, px, py) {
+  var w = screen.clientWidth, h = screen.clientHeight;
+  var worldX = view.cx + (px - w / 2) / view.scale;
+  var worldY = view.cy - (py - h / 2) / view.scale;
+  view.scale *= factor;
+  view.cx = worldX - (px - w / 2) / view.scale;
+  view.cy = worldY + (py - h / 2) / view.scale;
+  draw();
+  schedule();
+}
+
+screen.onwheel = function (e) {
+  e.preventDefault();
+  var box = screen.getBoundingClientRect();
+  zoomAt(Math.pow(1.0015, -e.deltaY), e.clientX - box.left, e.clientY - box.top);
+};
+document.getElementById("zoomIn").onclick = function () { zoomAt(1.5, screen.clientWidth / 2, screen.clientHeight / 2); };
+document.getElementById("zoomOut").onclick = function () { zoomAt(1 / 1.5, screen.clientWidth / 2, screen.clientHeight / 2); };
+
+document.getElementById("asmFind").oninput = paintAssembly;
+document.getElementById("recordButton").onclick = function () {
+  if (!animating) return;
+  recording = [];
+  this.disabled = true;
+  animating.step = -1;
+  advance();
+};
+document.getElementById("showAsm").onchange = function () {
+  document.getElementById("asmPane").className = this.checked ? "" : "hidden";
+  resize();
+};
+document.getElementById("fit").onclick = function () { fit(); draw(); schedule(); };
+document.getElementById("importObj").onclick = function () { document.getElementById("objFile").click(); };
+document.getElementById("objFile").onchange = function () {
+  var file = this.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function () {
+    try {
+      var entry = addCode(meshCode(reader.result), rows[rows.length - 1]);
+      grow(entry.area);
+      schedule();
+    } catch (e) {
+      document.getElementById("error").textContent = file.name + ": " + e.message;
+    }
+  };
+  reader.readAsText(file);
+  this.value = "";
+};
+document.getElementById("addCode").onclick = function () { addCode("", rows[rows.length - 1]).area.focus(); saveSoon(); };
+document.getElementById("addMath").onclick = function () { addRow("", rows[rows.length - 1]).field.focus(); saveSoon(); };
+var radios = document.querySelectorAll("input[name=target]");
+for (var i = 0; i < radios.length; i++) radios[i].onchange = run;
+window.onresize = resize;
+
+document.getElementById("viewButton").onclick = function (e) {
+  e.stopPropagation();
+  document.getElementById("viewPanel").classList.toggle("open");
+};
+document.getElementById("showGrid").onchange = function () { settings.grid = this.checked; draw(); saveSoon(); };
+document.getElementById("showAxes").onchange = function () { settings.axes = this.checked; draw(); saveSoon(); };
+document.getElementById("showValues").onchange = function () {
+  settings.values = this.checked;
+  document.body.classList.toggle("noValues", !this.checked);
+  saveSoon();
+};
+
+(function () {
+  var side = document.getElementById("side");
+  var drag = document.getElementById("drag");
+  try {
+    var stored = parseInt(localStorage.getItem("mexplainerth.side"));
+    if (stored > 0) side.style.width = stored + "px";
+  } catch (e) {}
+  drag.onmousedown = function (start) {
+    start.preventDefault();
+    drag.className = "on";
+    var move = function (e) {
+      var width = Math.max(280, Math.min(window.innerWidth * 0.75, e.clientX));
+      side.style.width = width + "px";
+      resize();
+    };
+    var up = function () {
+      drag.className = "";
+      document.removeEventListener("mousemove", move);
+      document.removeEventListener("mouseup", up);
+      try { localStorage.setItem("mexplainerth.side", parseInt(side.style.width)); } catch (e) {}
+    };
+    document.addEventListener("mousemove", move);
+    document.addEventListener("mouseup", up);
+  };
+})();
+document.getElementById("background").oninput = function () { settings.background = this.value; draw(); saveSoon(); };
+var backgroundChoices = ["#ffffff", "#f7f4ec", "#eef3f8", "#1d2230", "#000000"];
+for (var b = 0; b < backgroundChoices.length; b++) {
+  var chip = document.createElement("span");
+  chip.style.background = backgroundChoices[b];
+  chip.title = backgroundChoices[b];
+  chip.onclick = function () {
+    settings.background = this.title;
+    document.getElementById("background").value = this.title;
+    draw();
+    saveSoon();
+  };
+  document.getElementById("backgrounds").appendChild(chip);
+}
+document.addEventListener("click", function (e) {
+  if (paletteFor && !document.getElementById("palette").contains(e.target)) closePalette();
+  var panel = document.getElementById("viewPanel");
+  if (!panel.contains(e.target)) panel.classList.remove("open");
+});
+document.getElementById("example").onchange = function () {
+  if (this.value) load(this.value);
+  this.value = "";
+};
+window.addEventListener("beforeunload", save);
+
+var stored = null;
+try {
+  stored = JSON.parse(localStorage.getItem("mexplainerth.workspaces"));
+} catch (e) {
+}
+resize();
+if (stored && stored.length > 0) {
+  workspaces = stored;
+  var last = 0;
+  try {
+    last = parseInt(localStorage.getItem("mexplainerth.active")) || 0;
+  } catch (e) {
+  }
+  openWorkspace(Math.min(last, workspaces.length - 1));
+} else {
+  workspaces = [{name: "spirograph", blocks: examples.spirograph, values: JSON.parse(JSON.stringify(defaults)), forced: {}}];
+  openWorkspace(0);
+}
+var linked = location.hash.substring(1);
+if (examples[linked] || linked === "suzanne" || linked === "room") load(linked);
+</script>
+</body>
+</html>

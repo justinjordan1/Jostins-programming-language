@@ -1,0 +1,3 @@
+vault payload survives collection: [[10.0, 20.0], [30.0, 40.0]]
+closure payload survives collection: [[50.0, 60.0], [70.0, 80.0]]
+Program result: [[50.0, 60.0], [70.0, 80.0]]

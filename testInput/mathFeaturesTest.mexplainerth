@@ -1,0 +1,30 @@
+square_plus : dos(dos x) {
+    return x * x + 3 * x + 1;
+}
+
+var derivative function = diff(square_plus);
+var cleaned function = simplify(: dos(dos x) {
+    return x * 1 + 0;
+});
+
+var add_one function = : interger(interger x) { return x + 1; };
+var double_it function = : interger(interger x) { return x * 2; };
+var combined function = compose(double_it, add_one);
+
+collection sample matrix[[]] = [[0.0, 1.5707963267948966]\[3.141592653589793, 4.71238898038469]];
+collection identity matrix[[]] = eye(2);
+collection generated matrix[[]] = tabulate(2, 3, : dos(interger row, interger column) {
+    return row * 10 + column;
+});
+collection inverse matrix[[]] = í [[4.0, 7.0]\[2.0, 6.0]];
+
+print("sin(matrix) = ", sin(sample), "\n");
+print("eye(2) = ", identity, ", det = ", det(identity), "\n");
+print("tabulate = ", generated, "\n");
+print("inverse = ", inverse, "\n");
+print("d/dx ", formula(square_plus), " = ", formula(derivative), "\n");
+print("simplify(x * 1 + 0) = ", formula(cleaned), ", cleaned(9) = ", cleaned(9.0), "\n");
+print("solve(x^2 + 3x + 1, -3) = ", solve(square_plus, -3.0), "\n");
+print("compose(double, add_one)(4) = ", combined(4), ", 4 |> add_one |> double = ", 4 |> add_one |> double_it, "\n");
+
+return det([[4.0, 7.0]\[2.0, 6.0]]);

@@ -1,0 +1,15 @@
+hilbert : interger(dos x0, dos y0, dos xi, dos xj, dos yi, dos yj, interger n) {
+    if (n <= 0) {
+        var x dos = x0 + (xi + yi) / 2.0;
+        var y dos = y0 + (xj + yj) / 2.0;
+        print(x, " ", y, "\n");
+        return 0;
+    }
+    hilbert(x0, y0, yi / 2.0, yj / 2.0, xi / 2.0, xj / 2.0, n - 1);
+    hilbert(x0 + xi / 2.0, y0 + xj / 2.0, xi / 2.0, xj / 2.0, yi / 2.0, yj / 2.0, n - 1);
+    hilbert(x0 + xi / 2.0 + yi / 2.0, y0 + xj / 2.0 + yj / 2.0, xi / 2.0, xj / 2.0, yi / 2.0, yj / 2.0, n - 1);
+    hilbert(x0 + xi / 2.0 + yi, y0 + xj / 2.0 + yj, (0.0 - yi) / 2.0, (0.0 - yj) / 2.0, (0.0 - xi) / 2.0, (0.0 - xj) / 2.0, n - 1);
+    return 0;
+}
+
+hilbert(0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 2);
