@@ -389,7 +389,14 @@ public class LatexToSource {
         hoisted.append(") {\n");
 
         if (info.tuple) {
-            List<String> parts = partsOf(body, "mq_body");
+            List<String> parts = new ArrayList<>(partsOf(body, "mq_body"));
+            if (body.tupleCall == null) {
+                List<String> texts = new ArrayList<>(parts);
+                if (keep != null) texts.add(keep);
+                share(texts, info.params);
+                for (int i = 0; i < parts.size(); i++) parts.set(i, texts.get(i));
+                if (keep != null) keep = texts.get(parts.size());
+            }
             if (body.tupleCall != null) {
                 hoisted.append("    collection mq_body matrix[[]] = ").append(body.tupleCall).append(";\n");
             }
@@ -410,9 +417,70 @@ public class LatexToSource {
                 hoisted.append("    if (").append(keep).append(") {\n        return ").append(body.scalar)
                         .append(";\n    }\n    return mq_nan();\n}\n\n");
             } else {
-                hoisted.append("    return ").append(body.scalar).append(";\n}\n\n");
+                List<String> texts = new ArrayList<>(List.of(body.scalar));
+                share(texts, info.params);
+                hoisted.append("    return ").append(texts.get(0)).append(";\n}\n\n");
             }
         }
+    }
+
+    private void share(List<String> texts, List<String> params) {
+        for (int round = 0; round < 64; round++) {
+            String best = null;
+            for (String text : texts) {
+                for (int start = 0; start < text.length(); start++) {
+                    if (text.charAt(start) != '(') continue;
+                    if (start > 0 && (Character.isLetterOrDigit(text.charAt(start - 1)) || text.charAt(start - 1) == '_')) continue;
+                    int end = closing(text, start);
+                    if (end < 0) continue;
+                    String piece = text.substring(start, end + 1);
+                    if (piece.length() < 12 || (best != null && piece.length() >= best.length())) continue;
+                    if (!sharable(piece, params) || occurrences(texts, piece) < 2) continue;
+                    best = piece;
+                }
+            }
+            if (best == null) return;
+            String name = "mq_s" + (shared++);
+            hoisted.append("    var ").append(name).append(" dos = ").append(best).append(";\n");
+            java.util.regex.Pattern spot = java.util.regex.Pattern.compile("(?<![A-Za-z0-9_])" + java.util.regex.Pattern.quote(best));
+            for (int i = 0; i < texts.size(); i++) texts.set(i, spot.matcher(texts.get(i)).replaceAll(java.util.regex.Matcher.quoteReplacement(name)));
+        }
+    }
+
+    private int shared;
+
+    private int closing(String text, int start) {
+        int depth = 0;
+        for (int i = start; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (c == '(') depth++;
+            if (c == ')' && --depth == 0) return i;
+            if (c == ',' && depth == 1) return -1;
+        }
+        return -1;
+    }
+
+    private boolean sharable(String piece, List<String> params) {
+        if (piece.contains("[") || piece.contains("\"") || piece.contains(" get ")) return false;
+        java.util.regex.Matcher word = java.util.regex.Pattern.compile("[A-Za-z_][A-Za-z_0-9]*").matcher(piece);
+        while (word.find()) {
+            String name = word.group();
+            if (params.contains(name)) continue;
+            if (matrixNames.contains(name) || codeNames.contains(name)) return false;
+            FunctionInfo function = functions.get(name);
+            if (function != null && function.tuple) return false;
+        }
+        return true;
+    }
+
+    private int occurrences(List<String> texts, String piece) {
+        java.util.regex.Pattern spot = java.util.regex.Pattern.compile("(?<![A-Za-z0-9_])" + java.util.regex.Pattern.quote(piece));
+        int count = 0;
+        for (String text : texts) {
+            java.util.regex.Matcher found = spot.matcher(text);
+            while (found.find()) count++;
+        }
+        return count;
     }
 
     private List<String> partsOf(Val value, String holder) {

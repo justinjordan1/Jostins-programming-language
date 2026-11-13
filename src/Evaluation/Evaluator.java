@@ -84,6 +84,18 @@ public class Evaluator {
         }
     }
 
+    private static final ReturnControlException RETURN = new ReturnControlException(null);
+    private static final Types[][] PRECEDENCE = {
+            {EXPONENTIATE},
+            {MULTIPLY, DIVIDE, MOD, DOT_PRODUCT},
+            {PLUS, MINUS},
+            {GREATER, GREATER_EQ, LESS, LESS_EQ},
+            {EQUALS, NOT_EQUAL},
+            {AND},
+            {OR},
+            {PIPE}
+    };
+
     public Lexeme eval(Lexeme programParseTree, Environment environment) {
         this.environment = environment;
 
@@ -322,6 +334,12 @@ public class Evaluator {
             return resolveValue(evaluateStatement(binaryExpression.getChild(0), env), env);
         }
 
+        if (binaryExpression.getChildrenSize() == 3) {
+            Lexeme left = resolveValue(evaluateStatement(binaryExpression.getChild(0), env), env);
+            Lexeme right = resolveValue(evaluateStatement(binaryExpression.getChild(2), env), env);
+            return applyBinaryOperation(left, binaryExpression.getChild(1), right);
+        }
+
         ArrayList<Lexeme> operands = new ArrayList<>();
         ArrayList<Lexeme> operators = new ArrayList<>();
 
@@ -332,14 +350,10 @@ public class Evaluator {
             }
         }
 
-        reduceOperations(operands, operators, EXPONENTIATE);
-        reduceOperations(operands, operators, MULTIPLY, DIVIDE, MOD, DOT_PRODUCT);
-        reduceOperations(operands, operators, PLUS, MINUS);
-        reduceOperations(operands, operators, GREATER, GREATER_EQ, LESS, LESS_EQ);
-        reduceOperations(operands, operators, EQUALS, NOT_EQUAL);
-        reduceOperations(operands, operators, AND);
-        reduceOperations(operands, operators, OR);
-        reduceOperations(operands, operators, PIPE);
+        for (Types[] level : PRECEDENCE) {
+            if (operators.isEmpty()) break;
+            reduceOperations(operands, operators, level);
+        }
 
         if (operands.size() != 1) {
             throw new RuntimeException("Malformed binary expression");
@@ -1117,7 +1131,7 @@ public class Evaluator {
     }
 
     public Lexeme evaluateReturnStatement(Lexeme returnStatement, Environment env) {
-        throw new ReturnControlException(resolveValue(evaluateExpression(returnStatement.getChild(1), env), env));
+        throw RETURN.carrying(resolveValue(evaluateExpression(returnStatement.getChild(1), env), env));
     }
 
     public Lexeme evaluateConditional(Lexeme conditional, Environment env) {

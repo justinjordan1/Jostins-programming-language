@@ -28,7 +28,7 @@
   var fresh = function () {
     if (worker) worker.terminate();
     busy = false;
-    worker = new Worker("worker.js?v=306fa23808");
+    worker = new Worker("worker.js?v=02a4cfa22e");
     worker.onmessage = function (e) {
       var text = e.data;
       if (text === "@@ready") {

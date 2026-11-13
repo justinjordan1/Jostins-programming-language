@@ -7,7 +7,7 @@ import java.util.ArrayList;
 public final class Lexeme {
     private final Types type;
     private Integer lineNumber;
-    public ArrayList<Lexeme> children = new ArrayList<Lexeme>();
+    public ArrayList<Lexeme> children = new ArrayList<Lexeme>(0);
     private Integer intValue;
     private Double doubleValue;
     private Boolean booleanValue;
