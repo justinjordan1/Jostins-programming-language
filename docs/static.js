@@ -9,25 +9,26 @@
 
   var stage = function (percent, words) {
     goal = percent;
-    if (landing) landing.querySelector(".words").textContent = words;
+    if (!landing) return;
+    landing.querySelector(".words").textContent = words;
+    if (percent >= 100) {
+      var leaving = landing;
+      setTimeout(function () { leaving.className = "gone"; }, 250);
+      setTimeout(function () { leaving.remove(); if (landing === leaving) landing = null; }, 700);
+    }
   };
 
   var creep = function () {
     if (!landing) return;
     shown += (goal - shown) * (goal >= 100 ? 0.3 : 0.06);
     landing.querySelector(".fill").style.width = shown.toFixed(1) + "%";
-    if (goal >= 100 && shown > 99.5) {
-      landing.className = "gone";
-      setTimeout(function () { landing.remove(); landing = null; }, 400);
-      return;
-    }
     requestAnimationFrame(creep);
   };
 
   var fresh = function () {
     if (worker) worker.terminate();
     busy = false;
-    worker = new Worker("worker.js?v=e5197398a4");
+    worker = new Worker("worker.js?v=306fa23808");
     worker.onmessage = function (e) {
       var text = e.data;
       if (text === "@@ready") {

@@ -82,6 +82,8 @@
   .inlineSlider input[type=number] { width: 54px; font-size: 11px; color: var(--muted); }
   #addBar { display: flex; gap: 6px; padding: 10px 12px; }
   #addBar button { color: var(--muted); border-style: dashed; }
+  #syntax { margin-left: auto; align-self: center; color: var(--muted); text-decoration: none; }
+  #syntax:hover { color: var(--accent); }
   .error { color: #b3261e; font-size: 12px; padding: 0 12px; }
   .error:not(:empty) { padding: 6px 12px; background: #fdf0ef; }
   .makeSlider { margin-left: 6px; font-size: 11px; }
@@ -159,7 +161,7 @@
   </div>
   <div id="document">
     <div id="rows"></div>
-    <div id="addBar"><button id="addCode">+ code</button><button id="addMath">+ math</button><button id="importObj">import OBJ</button><input type="file" id="objFile" accept=".obj" style="display:none"></div>
+    <div id="addBar"><button id="addCode">+ code</button><button id="addMath">+ math</button><button id="importObj">import OBJ</button><input type="file" id="objFile" accept=".obj" style="display:none"><a id="syntax" href="https://github.com/justinjordan1/Jostins-programming-language#readme" target="_blank" rel="noopener">syntax &#8599;</a></div>
     <div id="error" class="error"></div>
     <div id="undefinedBar" class="error"></div>
     <div id="sliders"></div>
@@ -950,7 +952,10 @@ function prefixText(memory, wanted) {
 }
 
 function run() {
-  if (running && controller) controller.abort();
+  if (running && controller) {
+    if (controller.fit) wantFit = true;
+    controller.abort();
+  }
   running = true;
   document.getElementById("status").textContent = target() === "riscv" ? "compiling to RISC-V" : "running";
   document.getElementById("status").className = "busy";
@@ -986,6 +991,7 @@ function run() {
     }
   }
   var mine = new AbortController();
+  mine.fit = fitThis;
   controller = mine;
   var finished = function (text) {
     if (controller !== mine) return;
@@ -1212,7 +1218,7 @@ function fit() {
   var low = Math.floor(xs.length * 0.01), high = Math.ceil(xs.length * 0.99) - 1;
   var canvas = document.getElementById("screen");
   var wide = xs[high] - xs[low], tall = ys[high] - ys[low];
-  if (wide <= 0 || tall <= 0) return;
+  if (wide <= 0 || tall <= 0 || canvas.clientWidth <= 0 || canvas.clientHeight <= 0) return;
   view.cx = (xs[low] + xs[high]) / 2;
   view.cy = (ys[low] + ys[high]) / 2;
   view.scale = Math.min(canvas.clientWidth / wide, canvas.clientHeight / tall) * 0.85;
